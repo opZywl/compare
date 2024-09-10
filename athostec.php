@@ -6,7 +6,7 @@ require_once "resources/check_auth.php";
 
 if (permission_exists('cti_view')) {
     /**
-			access granted
+                        access granted
      */
 } else {
     echo "access denied";
@@ -14,7 +14,7 @@ if (permission_exists('cti_view')) {
 }
 
 /**
-		add multi-lingual support
+                add multi-lingual support
  */
 
 require_once "app_languages.php";
@@ -69,26 +69,26 @@ if (isset($_POST)) {
 }
 
 $html  = '<div class="timeline-block">';
-$html .= '	<div class="timeline-point complete">';
-$html .= '		<i class="pg-telephone"></i>';
-$html .= '	</div>';
-$html .= '	<div class="timeline-content">';
-$html .= '		<div class="card social-card share full-width">';
-$html .= '			<div class="card-header clearfix">';
-$html .= '				<h5>@CallNumber';
-$html .= '					<span></span>';
-$html .= '					<span class="callHistory" data-history-call="@CallNumber"><i class="fa fa-phone"></i></span>';
-$html .= '				</h5>';
-$html .= '				<h6>';
-$html .= '					@Direction';
-$html .= '				</h6>';
-$html .= '			</div>';
-$html .= '		</div>';
-$html .= '		<div class="event-date">';
-$html .= '			<small class="fs-12 hint-text">' . date("d F Y") . '</small>';
-$html .= '			<small class="fs-12 hint-text">' . date("H:i:s") . '</small>';
-$html .= '		</div>';
-$html .= '	</div>';
+$html .= '      <div class="timeline-point complete">';
+$html .= '              <i class="pg-telephone"></i>';
+$html .= '      </div>';
+$html .= '      <div class="timeline-content">';
+$html .= '              <div class="card social-card share full-width">';
+$html .= '                      <div class="card-header clearfix">';
+$html .= '                              <h5>@CallNumber';
+$html .= '                                      <span></span>';
+$html .= '                                      <span class="callHistory" data-history-call="@CallNumber"><i class="fa fa-phone"></i></span>';
+$html .= '                              </h5>';
+$html .= '                              <h6>';
+$html .= '                                      @Direction';
+$html .= '                              </h6>';
+$html .= '                      </div>';
+$html .= '              </div>';
+$html .= '              <div class="event-date">';
+$html .= '                      <small class="fs-12 hint-text">' . date("d F Y") . '</small>';
+$html .= '                      <small class="fs-12 hint-text">' . date("H:i:s") . '</small>';
+$html .= '              </div>';
+$html .= '      </div>';
 $html .= '</div>';
 
 if (strlen($rtc_history_direction) > 0) {
