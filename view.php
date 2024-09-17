@@ -1,5 +1,5 @@
 <?php
-// old
+// novo
 	require_once "root.php";
 	require_once "resources/require.php";
 	require_once "resources/check_auth.php";
@@ -56,8 +56,6 @@
 					},
 					data: {
 							"SURVEY": $("select#SURVEY").val(),
-							"SURVEY_DIGIT": $("select#SURVEY_DIGIT").val(),
-							"QUESTION": $("select#QUESTION").val(),
 							"CC_QUEUE": $("select#CC_QUEUE").val(),
 							"CC_AGENT": $("select#CC_AGENT").val(),
 							"PROTOCOL": $("#PROTOCOL").val(),
