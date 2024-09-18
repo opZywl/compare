@@ -1,5 +1,4 @@
 <?php
-// novo
 	require_once "root.php";
 	require_once "resources/require.php";
 	require_once "resources/check_auth.php";
@@ -27,7 +26,6 @@
 	require_once "resources/header.php";
 	
 	$db_name = "cdr_".$domain_uuid;
-	$domain_name = $_SESSION['domain_name'];
 
 	/**
 		storing  request (ie, get/post) global array to a variable
@@ -39,8 +37,10 @@
 	$cc_queue = $_POST['CC_QUEUE'];
 	$cc_agent = $_POST['CC_AGENT'];
 	$protocol = $_POST['PROTOCOL'];
+	$question = $_POST['QUESTION'];
 	$start_stamp_begin = $_POST['DATA_INI'];
 	$start_stamp_end = $_POST['DATA_END'];
+	$survey_digit = $_POST['SURVEY_DIGIT'];
 	
 	if (strlen($start_stamp_begin) == 0 )
 	{
@@ -70,24 +70,10 @@
 	{
 		$sql_where_ands[] = "cc.cc_agent = '".$cc_agent."@".$_SESSION["domain_name"]."'";
 	}
-
-	
 	
 	if (strlen($cc_queue) > 0)
 	{
 		$sql_where_ands[] = "cc.cc_queue = '".$cc_queue."@".$_SESSION["domain_name"]."'";
-	}
-	else
-	{
-		if(if_group("cc_manager"))
-		{
-			$queueIn = getQueuesCcManager($_SESSION['username']);
-		}
-
-		if(strlen($queueIn) > 0)
-		{
-			$sql_where_ands[] = "cc.cc_queue in ($queueIn) ";
-		}
 	}
 
 	if (strlen($survey) > 0)
@@ -100,12 +86,38 @@
 		$sql_where_ands[] = "v_a.protocol = '$protocol'";
 	}
 	
+	if (strlen($question) > 0)
+	{
+		$sql_where_ands[] = "su.param = '$question'";
+	}
+	
+	$sql_where_digit = ' WHERE TRUE ';
+	if(strlen($survey_digit) > 0)
+	{
+		if($survey_digit == 'true')
+		{
+			$sql_where_digit .= " and digits <> '-1' ";
+			$sql_where_ands[] .= " su.value <> '-1' ";
+		}
+		elseif($survey_digit == 'false')
+		{
+			$sql_where_digit .= " and digits = '-1' ";
+			$sql_where_ands[] .= " su.value = '-1' ";
+		}
+		else
+		{
+			$sql_where_digit .= " and digits = '$survey_digit' ";
+			$sql_where_ands[] .= " su.value = '$survey_digit' ";
+		}
+	}
+
 	if (sizeof($sql_where_ands) > 0)
 	{
 		$sql_where = " and ".implode(" and ", $sql_where_ands);
 	}
 
 	$sql_where = "where true " . $sql_where;
+
 
 	$sql = "SELECT SUM(recordsTotal) AS recordsTotal FROM (
 						SELECT
@@ -147,76 +159,100 @@
 		$recordsTotal = '0';
 	}
 
-	$sql = "SELECT * FROM (
-						SELECT
-						  r_a.uuid uuid_a
-						, r_b.uuid uuid_b
-						, v_b.destination_number
-						, r_a.start_epoch
-						, 'Saida' AS Direcao 
-						, su.survey_name survey_name
-						, v_a.caller_id_number Ramal
-						, if(v_a.callee_id_number IS NULL, v_b.callee_id_number, v_a.callee_id_number) Numero
-						, FROM_UNIXTIME(r_a.start_epoch, '%Y-%m-%d') 'Data'
-						, FROM_UNIXTIME(r_a.start_epoch, '%H:%i:%s') 'Hora'
-						, su.param survey_var_name
-						, if (su.value IS NULL, '-1', su.value) digits
-						, SUBSTRING_INDEX(cc.cc_agent,'@',1) agent_name
-						, SUBSTRING_INDEX(cc.cc_queue,'@',1) queue_name
-						, v_a.record_session
-						, v_a.cc_record_filename
-						, v_a.protocol Protocolo
-						
-						FROM `cdr_$domain_uuid`.`cdr_survey` su
-						INNER JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_b ON r_b.uuid = su.uuid
-						INNER JOIN `cdr_$domain_uuid`.`cdr_variables`  v_b ON v_b.uuid = su.uuid
-						LEFT JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_a ON r_a.uuid = r_b.bridge_uuid
-						LEFT JOIN `cdr_$domain_uuid`.`cdr_variables`  v_a ON v_a.uuid = r_b.bridge_uuid
-						LEFT JOIN  `cdr_$domain_uuid`.`cdr_cc` 		  cc ON cc.uuid = r_a.uuid
-						$sql_where
-						AND r_b.bridge_uuid IS NOT NULL
-						AND LENGTH(v_a.caller_id_number) < 8
-						
-						UNION
-						
-						SELECT 
-						  r_a.uuid uuid_a
-						, r_b.uuid uuid_b
-						, v_a.destination_number
-						, r_a.start_epoch
-						, 'Entrada' AS Direcao 
-						, su.survey_name Pesquisa
-						, if(v_a.callee_id_number IS NULL, v_b.callee_id_number, v_a.callee_id_number) Ramal
-						, v_a.caller_id_number Numero
-						, FROM_UNIXTIME(r_a.start_epoch, '%Y-%m-%d') 'Data'
-						, FROM_UNIXTIME(r_a.start_epoch, '%H:%i:%s') 'Hora'
-						, su.param Pergunta
-						, if (su.value IS NULL, '-1', su.value) Digito
-						, SUBSTRING_INDEX(cc.cc_agent,'@',1) Agente
-						, SUBSTRING_INDEX(cc.cc_queue,'@',1) Fila
-						, v_b.record_session
-						, v_a.cc_record_filename
-						, v_a.protocol Protocolo
-						
-						FROM `cdr_$domain_uuid`.`cdr_survey` su
-						INNER JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_a ON r_a.uuid = su.uuid
-						INNER JOIN `cdr_$domain_uuid`.`cdr_variables`  v_a ON v_a.uuid = su.uuid
-						LEFT JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_b ON r_b.bridge_uuid = r_a.uuid
-						LEFT JOIN `cdr_$domain_uuid`.`cdr_variables`  v_b ON r_a.bridge_uuid = v_b.uuid
-						LEFT JOIN  `cdr_$domain_uuid`.`cdr_cc` cc ON cc.uuid = r_a.uuid
-						LEFT JOIN  `cdr_$domain_uuid`.`cdr_cc` cc_b ON cc_b.uuid = r_b.uuid
-						$sql_where
-						AND (`cc`.`cc_side` = 'member')
-						AND (cc_b.cc_queue_inc =  cc.cc_queue_inc)
-				)a";
-		$sql.= " order by start_epoch DESC ";
+	$sql = "
+SELECT
+    *
+FROM (
+    SELECT
+        (@cnt := @cnt + 1) AS rowNumber
+        , b.*
+    FROM (
+        SELECT
+            a.*
+        FROM (
+			/*SAÍDA*/
+			SELECT
+				'1' AS 'TAG'
+				, su. survey_uuid uuid_su
+				, r_a.uuid uuid_a
+				, r_b.uuid uuid_b
+				, v_b.destination_number
+				, r_a.start_epoch start_epoch_a
+                , r_b.start_epoch start_epoch_b
+				, 'Saida' AS Direcao 
+				, su.survey_name survey_name
+				, v_a.caller_id_number Ramal
+				, if(v_a.callee_id_number IS NULL, v_b.callee_id_number, v_a.callee_id_number) Numero
+				, FROM_UNIXTIME(r_a.start_epoch, '%Y-%m-%d') 'Data'
+				, FROM_UNIXTIME(r_a.start_epoch, '%H:%i:%s') 'Hora'
+				, su.param survey_var_name
+				, if (su.value IS NULL, '-1', su.value) digits
+				, SUBSTRING_INDEX(cc.cc_agent,'@',1) agent_name
+				, SUBSTRING_INDEX(cc.cc_queue,'@',1) queue_name
+				, v_a.record_session
+				, v_a.cc_record_filename
+				, v_a.protocol Protocolo
+				
+				FROM `cdr_$domain_uuid`.`cdr_survey` su
+				INNER JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_b ON r_b.uuid = su.uuid
+				INNER JOIN `cdr_$domain_uuid`.`cdr_variables`  v_b ON v_b.uuid = su.uuid
+				LEFT JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_a ON r_a.uuid = r_b.bridge_uuid
+				LEFT JOIN `cdr_$domain_uuid`.`cdr_variables`  v_a ON v_a.uuid = r_b.bridge_uuid
+				LEFT JOIN  `cdr_$domain_uuid`.`cdr_cc` 		  cc ON cc.uuid = r_a.uuid
+				$sql_where
+				AND r_b.bridge_uuid IS NOT NULL
+				AND LENGTH(v_a.caller_id_number) < 8
+				
+				UNION
+				
+				/*ENTRADA*/
+				SELECT 
+				'2' AS 'TAG'
+				, su. survey_uuid uuid_su
+				, r_a.uuid uuid_a
+				, r_b.uuid uuid_b
+				, v_a.destination_number
+				, r_a.start_epoch start_epoch_a
+                , r_b.start_epoch start_epoch_b
+				, 'Entrada' AS Direcao 
+				, su.survey_name Pesquisa
+				, if(v_a.callee_id_number IS NULL, v_b.callee_id_number, v_a.callee_id_number) Ramal
+				, v_a.caller_id_number Numero
+				, FROM_UNIXTIME(r_a.start_epoch, '%Y-%m-%d') 'Data'
+				, FROM_UNIXTIME(r_a.start_epoch, '%H:%i:%s') 'Hora'
+				, su.param Pergunta
+				, if (su.value IS NULL, '-1', su.value) Digito
+				, SUBSTRING_INDEX(cc.cc_agent,'@',1) Agente
+				, SUBSTRING_INDEX(cc.cc_queue,'@',1) Fila
+				, v_b.record_session
+				, v_a.cc_record_filename
+				, v_a.protocol Protocolo
+				
+				FROM `cdr_$domain_uuid`.`cdr_survey` su
+				INNER JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_a ON r_a.uuid = su.uuid
+				INNER JOIN `cdr_$domain_uuid`.`cdr_variables`  v_a ON v_a.uuid = su.uuid
+				LEFT JOIN `cdr_$domain_uuid`.`cdr_refer_uuid` r_b ON r_b.bridge_uuid = r_a.uuid
+				LEFT JOIN `cdr_$domain_uuid`.`cdr_variables`  v_b ON r_a.bridge_uuid = v_b.uuid
+				LEFT JOIN  `cdr_$domain_uuid`.`cdr_cc` cc ON cc.uuid = r_a.uuid
+				LEFT JOIN  `cdr_$domain_uuid`.`cdr_cc` cc_b ON cc_b.uuid = r_b.uuid
+				$sql_where
+				AND (`cc`.`cc_side` = 'member')
+				AND (cc_b.cc_queue_inc =  cc.cc_queue_inc)
+		)a $sql_where_digit ";
+		$sql.= "
+		order by start_epoch_a DESC, start_epoch_b DESC
+        )b order by rowNumber desc
+	)c group by uuid_a, survey_name, survey_var_name, digits
+	order by rowNumber desc
+		;";
 	
 	if(isset($requestData['start']))
 	{
-		$sql .= " LIMIT " . $requestData['start'] . " ," . $requestData['length'] . "   ";
+		$sql .= "
+	LIMIT " . $requestData['start'] . " ," . $requestData['length'] . "   ;";
 	}
-	
-	$file_sql = fopen('SQL.txt','w');
+
+	$file_sql = fopen('survey.sql','w');
 	fwrite($file_sql, $sql);
 	fclose($file_sql);
 
@@ -258,7 +294,6 @@
 		header('Content-Disposition: attachment; filename="' . uuid() .'.csv"');
 		
 		$t = array();
-		array_push($t, 'ID da chamada');
 		array_push($t, $text['label-direction']);
 		array_push($t, $text['label-number']);
 		array_push($t, $text['label-protocol']);
@@ -279,11 +314,10 @@
 		foreach ($result as $row)
 		{
 			$a = array();
-			$a[] = $row["uuid_a"];
 			$a[] = $row["Direcao"];
 			$a[] = $row["Numero"];
 			$a[] = $row["Protocolo"];
-			$a[] = date('Y-m-d H:i:s', $row["start_epoch"]);
+			$a[] = date('Y-m-d H:i:s', $row["start_epoch_a"]);
 			$a[] = $row["queue_name"];
 			$a[] = $row["agent_name"];
 			$a[] = $row["survey_name"];
@@ -344,7 +378,7 @@
 		$uuid = $aUuid;
 		$bridge_uuid ="";
 		$member_uuid = "";
-		$start_epoch = $row["start_epoch"];
+		$start_epoch = $row["start_epoch_a"];
 		$cc_record_filename = $row["cc_record_filename"];
 		
 		/**
@@ -375,7 +409,7 @@
 		$a[] = $row["Direcao"];
 		$a[] = $row["Numero"];
 		$a[] = $row["Protocolo"];
-		$a[] = date('Y-m-d H:i:s', $row["start_epoch"]);
+		$a[] = date('Y-m-d H:i:s', $row["start_epoch_a"]);
 		$a[] = $row["queue_name"];
 		$a[] = $row["agent_name"];
 		$a[] = $row["survey_name"];
@@ -445,28 +479,4 @@
 	);
 	
 	echo json_encode($json_data);
-
-	function getQueuesCcManager($username)
-	{
-		global $domain_uuid;
-		global $domain_name;
-		global $db;
-		$sql = "select CONCAT(\"'\",queue_name, '@$domain_name',\"'\") as queue_name from v_call_center_queues ";
-		$sql .= "where domain_uuid = '$domain_uuid' ";
-		$sql .= "and queue_cc_manager LIKE '%@".$username."@%' ";
-		$sql .= "and survey_uuid is not null and survey_uuid <> '' ";
-		$sql .= "order by ";
-		$sql .= "queue_extension asc ";
-		$prep_statement = $db->prepare(check_sql($sql));
-		$prep_statement->execute();
-		$result_e = $prep_statement->fetchAll(PDO::FETCH_NAMED);
-		$queueIn = '';
-		foreach($result_e as $queue)
-		{
-			$queueIn .= $queue['queue_name'] . ',';
-		}
-		$queueIn = substr($queueIn, 0, -1);
-		
-		return $queueIn;
-	}
 ?>
