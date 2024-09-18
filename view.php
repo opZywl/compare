@@ -1,5 +1,5 @@
 <?php
-// old
+// novo
 require_once "root.php";
 require_once "resources/require.php";
 require_once "resources/check_auth.php";
