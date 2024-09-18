@@ -1,4 +1,3 @@
-// old
 <?php
 require_once "root.php";
 require_once "resources/require.php";
@@ -122,17 +121,22 @@ require_once "resources/header.php";
 					<div class="form-group form-group-default form-group-default-select2">
 						<label><?= $text['label-survey']; ?></label>
 						<select name="SURVEY" id="SURVEY" class=" full-width" data-init-plugin="select2">
+							<option value=""><?= $text['label-all']; ?></option>
 							<?php
-							$sql  = "select survey_name, survey_uuid ";
-							$sql .= "from v_surveys ";
-							$sql .= "where domain_uuid = '" . $_SESSION['domain_uuid'] . "' ";
+							$sql  = "SELECT DISTINCT s.survey_name, s.survey_uuid, s.survey_extension ";
+							$sql .= "from v_surveys s ";
+							$sql .= "LEFT JOIN v_call_center_queues q ON q.survey_uuid = s.survey_uuid ";
+							$sql .= "where s.domain_uuid = '" . $_SESSION['domain_uuid'] . "' ";
+							if (if_group("cc_manager")) {
+								$sql .= "and q.queue_cc_manager LIKE '%@" . $_SESSION['username'] . "@%' ";
+							}
 							$sql .= "order by ";
-							$sql .= "survey_name asc ";
+							$sql .= "s.survey_extension asc ";
 							$prep_statement = $db->prepare(check_sql($sql));
 							$prep_statement->execute();
 							$result_e = $prep_statement->fetchAll(PDO::FETCH_NAMED);
 							foreach ($result_e as $row) {
-								echo "<option value='" . $row['survey_uuid'] . "' >" . $row['survey_name'] . "</option>\n";
+								echo "<option value='" . $row['survey_uuid'] . "' >{$row['survey_extension']} - {$row['survey_name']}</option>\n";
 							}
 							unset($prep_statement);
 							?>
@@ -143,15 +147,11 @@ require_once "resources/header.php";
 					<div class="form-group form-group-default form-group-default-select2">
 						<label><?= $text['label-queue']; ?></label>
 						<select name="CC_QUEUE" id="CC_QUEUE" class=" full-width" data-init-plugin="select2">
-							<?php if (!if_group("cc_manager")) {
-							?>
-								<option value=""><?= $text['label-all']; ?></option>
-							<?php
-							}
-							?>
+							<option value=""><?= $text['label-all']; ?></option>
 							<?php
 							$sql = "select queue_extension, queue_name from v_call_center_queues ";
 							$sql .= "where domain_uuid = '$domain_uuid' ";
+							$sql .= "and survey_uuid is not null and survey_uuid <> '' ";
 							if (if_group("cc_manager")) {
 								$sql .= "and queue_cc_manager LIKE '%@" . $_SESSION['username'] . "@%' ";
 							}
@@ -175,19 +175,28 @@ require_once "resources/header.php";
 						<select name="CC_AGENT" id="CC_AGENT" class=" full-width" data-init-plugin="select2">
 							<option value=""><?= $text['label-all']; ?></option>
 							<?php
-							$sql  = "select agent_name cc_agent  ";
+							$sql  = "select agent_name ";
 							$sql .= "from v_call_center_agents ";
 							$sql .= "where domain_uuid = '" . $_SESSION['domain_uuid'] . "' ";
-							if (if_group("cc_manager")) {
-								$sql .= "and supervisor_name LIKE '%@" . $_SESSION['username'] . "@%' ";
-							}
 							$sql .= "order by ";
-							$sql .= "cc_agent asc ";
+							$sql .= "agent_name asc ";
+
+							if (if_group("cc_manager")) {
+								$sql  = " SELECT DISTINCT a.agent_name ";
+								$sql .= " FROM v_call_center_agents a ";
+								$sql .= " INNER JOIN v_call_center_tiers t ON t.agent_name = a.agent_name ";
+								$sql .= " INNER JOIN v_call_center_queues q ON q.queue_name = t.queue_name ";
+								$sql .= " WHERE a.domain_uuid = '" . $_SESSION['domain_uuid'] . "'";
+								$sql .= " AND q.queue_cc_manager LIKE '%@" . $_SESSION['username'] . "@%'";
+								$sql .= "order by ";
+								$sql .= "a.agent_name asc ";
+							}
+
 							$prep_statement = $db->prepare(check_sql($sql));
 							$prep_statement->execute();
 							$result_e = $prep_statement->fetchAll(PDO::FETCH_NAMED);
 							foreach ($result_e as $row) {
-								echo "<option value='" . $row['cc_agent'] . "'>" . $row['cc_agent'] . "</option>\n";
+								echo "<option value='" . $row['agent_name'] . "'>" . $row['agent_name'] . "</option>\n";
 							}
 							unset($prep_statement);
 							?>
@@ -228,8 +237,8 @@ require_once "resources/header.php";
 			</div>
 		</form>
 		<div class="row">
-			<div id="charts">
-			</div>
+		<div id="charts">
+		</div>
 			<div class="clearfix"></div>
 			<div id="rtb">
 			</div>
@@ -245,9 +254,22 @@ require_once "resources/header.php";
 require_once "resources/footer.php";
 
 ?>
-
 <script>
 	$(document).ready(function() {
+		$("#CC_QUEUE").change(function() {
+			const queue = $(this).val();
+			$.get(`../xml_cdr_call_center/filter_agent.php?QUEUE=${queue}`, function(data) {
+				// Adiciona o HTML obtido ao elemento <select>
+				console.log(data);
+				$('#CC_AGENT').html(data);
+			});
+
+			$.get(`../xml_cdr_call_center/filter_survey.php?QUEUE=${queue}`, function(data) {
+				// Adiciona o HTML obtido ao elemento <select>
+				console.log(data);
+				$('#SURVEY').html(data);
+			});
+		});
 
 		//carregar perguntas da pesquisa selecionada
 		const survey = $('#SURVEY').val();
@@ -274,7 +296,6 @@ require_once "resources/footer.php";
 				$('#SURVEY_DIGIT').html(data);
 			});
 		});
-
 
 	});
 </script>
