@@ -34,9 +34,8 @@ CREATE TABLE `cdr_variables` (
 	`digits` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	`originate_disposition` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	`sip_req_user` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
-	`protocol` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+	`protocol` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	`playback_ms` DECIMAL(10,0) NULL DEFAULT NULL,
-	`ivr_menu_option_description` TEXT NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	PRIMARY KEY (`uuid`) USING BTREE,
 	INDEX `destination_number_normalized_idx` (`destination_number_normalized`) USING BTREE,
 	INDEX `caller_id_number_idx` (`caller_id_number_normalized`) USING BTREE,
@@ -47,6 +46,6 @@ CREATE TABLE `cdr_variables` (
 	INDEX `sip_req_user_idx` (`sip_req_user`) USING BTREE,
 	INDEX `gateway_uuid` (`gateway_uuid`) USING BTREE
 )
-COLLATE='utf8_unicode_ci'
+COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
