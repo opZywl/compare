@@ -10,13 +10,13 @@ CREATE TABLE `cdr_cc` (
 	`cc_queue_end_epoch` DECIMAL(10,0) NULL DEFAULT NULL,
 	`cc_queue_inc_timeout_epoch` DECIMAL(10,0) NULL DEFAULT NULL,
 	`cc_issue_sound` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
-	`cc_side` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+	`cc_side` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	`cc_member_uuid` CHAR(36) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
-	`cc_queue` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+	`cc_queue` VARCHAR(100) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	`cc_member_session_uuid` CHAR(36) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
-	`cc_agent` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
-	`cc_agent_outbound` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
-	`cc_agent_type` VARCHAR(255) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+	`cc_agent` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+	`cc_agent_outbound` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
+	`cc_agent_type` VARCHAR(45) NULL DEFAULT NULL COLLATE 'utf8_unicode_ci',
 	`cc_queue_inc` INT(11) NULL DEFAULT NULL,
 	PRIMARY KEY (`id`) USING BTREE,
 	INDEX `start_epoch_idx` (`start_epoch`) USING BTREE,
@@ -28,8 +28,8 @@ CREATE TABLE `cdr_cc` (
 	INDEX `cc_member_session_uuid` (`cc_member_session_uuid`) USING BTREE,
 	INDEX `cc_issue_sound` (`cc_issue_sound`) USING BTREE
 )
-COLLATE='utf8_unicode_ci'
+COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ROW_FORMAT=COMPACT
-AUTO_INCREMENT=854160
+AUTO_INCREMENT=610473
 ;
