@@ -18,6 +18,6 @@ CREATE TABLE `cdr_main` (
 	INDEX `main_idx` (`start_epoch`, `direction`, `sofia_profile_name`, `bridge_uuid`, `caller_id_number`, `destination_number`, `sip_from_user`, `sip_to_user`, `dialed_user`, `uuid`, `answer_epoch`, `end_epoch`, `is_callback`, `call_back_params`, `originator`) USING BTREE,
 	INDEX `originator` (`originator`) USING BTREE
 )
-COLLATE='utf8_unicode_ci'
+COLLATE='utf8_general_ci'
 ENGINE=InnoDB
 ;
