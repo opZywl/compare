@@ -1,4 +1,9 @@
 <?php
+/**
+Tom: 2021-03-26
+	Copiado do São camilo para fazer o q lista todos os agentes.
+*/
+	
 	include "root.php";
 	require_once "resources/require.php";
 	require_once "resources/check_auth.php";
@@ -24,22 +29,6 @@
 	}
 	
 	/**
-		get the queue_name and set it as a variable
-	*/
-
-	if(isset($_POST["queue_name"]))
-	{
-		$cc_queue = $_POST["queue_name"];
-	}
-	
-	if(isset($_GET["queue_name"]))
-	{
-		$cc_queue = $_GET["queue_name"];
-	}
-	
-	$queue_name = $cc_queue.'@'. $_SESSION['domains'][$domain_uuid]['domain_name'];
-
-	/**
 		create an event socket connection
 	*/
 	
@@ -55,13 +44,6 @@
 	}
 	else
 	{
-		/**
-			get the tier list
-		*/
-		
-		$switch_cmd = 'callcenter_config queue list tiers '.$queue_name;
-		$event_socket_str = trim(event_socket_request($fp, 'api '.$switch_cmd));
-		$result = str_to_named_array($event_socket_str, '|');			
 		
 		/**
 			Pega gw ext para saida do eavesdrop
@@ -71,23 +53,26 @@
 		$ext_gw = trim(event_socket_request($fp, 'api '.$switch_cmd));
 		if ($ext_gw == "-ERR no reply") {unset($ext_gw);}
 		
+		
+		
 		/**
 			lista as filas deste domínio			
 		*/
 		
+		/*fazer filtro de supervisor de fila aqui...*/
 		unset ($prep_statement, $sql);				
 		$sql = "SELECT * FROM v_call_center_queues WHERE TRUE ";
 		$sql.= "and domain_uuid = '".$domain_uuid."' ";
-		if(if_group("cc_manager"))
-		{
-			$sql .= "and queue_cc_manager LIKE '%@".$_SESSION['username']."@%' ";
-		}
+		//$sql.= "and queue_name in ('FILA_SUPORTE','FILA_INTEGRACAO', 'FILA_TRANSBORDO') ";
+		//$sql.= "and queue_name in ('FILA_INTEGRACAO', 'FILA_TRANSBORDO') ";
 		$sql.= "order by queue_name asc";
+		//error_log($sql);
 		$prep_statement = $db->prepare(check_sql($sql));
 		$prep_statement->execute();
 		$queue_list = $prep_statement->fetchAll(PDO::FETCH_NAMED);										
 		unset ($prep_statement);
 
+		
 		// pegar os agentes fila a fila. Pois se pegar todos vai ser muita carga para servidor multi dominio
 		// tb, pegando um a um, ja vem com o filtro "fila" que pode ser feito no início
 		
@@ -97,26 +82,39 @@
 		foreach ($queue_list as $_queue) 
 		{
 			$switch_cmd = 'callcenter_config queue list agents '.$_queue['queue_name']."@".$_SESSION['domains'][$domain_uuid]['domain_name'];
-			// error_log($switch_cmd);
+			//error_log($switch_cmd);
 			$event_socket_str = trim(event_socket_request($fp, 'api '.$switch_cmd));
 			$tmp_arr = str_to_named_array($event_socket_str, '|');
+			foreach($tmp_arr as $key => $row) {
+				//error_log($key." nome[".$row['name']."]");
+			}
 			
+			//atribui como chave o nome do agente para nao duplicar
 			foreach($tmp_arr as $key => $row) {
 				$agent_result[$row['name']] = $row;
 			}
-
+			
+			foreach($agent_result as $key => $row) {
+				//error_log("ficou [".$row['name']."]");
+			}
+			
+			
+		
 			/**
 				get the tier list
 				tier list, tb para cada fila para naõ ter que gerar todos de uma vez
 			*/
 			
 			$switch_cmd = 'callcenter_config queue list tiers '.$_queue['queue_name']."@".$_SESSION['domains'][$domain_uuid]['domain_name'];
+			//$switch_cmd = 'callcenter_config tier list';
 			$event_socket_str = trim(event_socket_request($fp, 'api '.$switch_cmd));
 			$tmp_arr = str_to_named_array($event_socket_str, '|');			
 			
+			//adiciona todos os tiers numa unica lista
 			foreach($tmp_arr as $key => $row) {
 				array_push($tier_arr, $row);
 			}
+			
 			
 			/**
 				get the queue member list
@@ -125,12 +123,20 @@
 			//lista dos clientes que ligaram para a fila (em fila ou falando)
 			$switch_cmd = 'callcenter_config queue list members '.$_queue['queue_name']."@".$_SESSION['domains'][$domain_uuid]['domain_name'];
 			$event_socket_str = trim(event_socket_request($fp, 'api '.$switch_cmd));
+			//error_log("tom [$event_socket_str]");
 			$tmp_arr = str_to_named_array($event_socket_str, '|');
 			foreach($tmp_arr as $key => $row) {
+				//error_log("tom [".$row['queue']."]");
 				array_push($result_members, $row);
 			}
 			
 		}
+		
+		
+		foreach($result_members as $key => $row) {
+			//error_log("serving_agent [".$row['serving_agent']."]");
+		}
+		
 		
 		/**
 			prepare the result for array_multisort
@@ -153,6 +159,11 @@
 			
 		fclose($fp);
 	}
+	
+	//agent_result -> todos os agentes que estão nas filas, logados e não logados e seus tempos.
+	//tier_result -> o vinculo agente X fila
+	//result_members -> todos os membros. Aqui a FILA, o AGENTE (se estiver falando) e o NÚMERO do cliente.
+	
 	
 	/**
 		Break list
@@ -202,7 +213,7 @@
 								
 								if (strlen($agent_logged[$tier_row['agent']]['break_timeout']) > 0 )
 								{
-									$tmp_break_timeout = gmdate("H:i:s", ($agent_logged[$tier_row['agent']]['break_timeout']));
+									$tmp_break_timeout = gmdate("H:i:s", intval(($agent_logged[$tier_row['agent']]['break_timeout'])));
 								}
 								else
 								{
@@ -212,6 +223,10 @@
 								$agent_logged[$tier_row['agent']]['break_name'] = $agent_logged[$tier_row['agent']]['break_name'];
 								
 								break;
+							}
+							else
+							{
+								$agent_logged[$tier_row['agent']]['break_name'] = $text['label-break_default'];
 							}
 						}
 					}
@@ -291,7 +306,9 @@
 		$sql.= " SUM(ns_60) AS ns_60,";
 		$sql.= " SUM(ns_60_up) AS ns_60_up";
 		$sql.= " FROM v_xml_cdr_call_center_queue_consolidate c";
-		$sql.= " WHERE c.start_stamp = '" . date("Y-m-d") . "'";
+		$sql.= " WHERE TRUE";
+		$sql.= " AND c.start_stamp = '" . date("Y-m-d") . "'";
+		$sql.= " AND domain_uuid = '$domain_uuid' ";
 		$prep_statement = $db->prepare(check_sql($sql));
 		$prep_statement->execute();
 		$queue_consolidate = $prep_statement->fetchAll(PDO::FETCH_NAMED);
@@ -307,20 +324,21 @@
 		$sql.= " SUM(answered_count) AS answered_count,";
 		$sql.= " SUM(not_answered_count) AS not_answered_count,";
 		$sql.= " SUM(answered_duration) AS answered_duration,";
-		$sql.= " first_login AS first_login,";
+		$sql.= " SUM(first_login) AS first_login,";
 		$sql.= " SUM(answered_duration) AS answered_duration,";
 		$sql.= " SUM(outbound_answered_duration) AS outbound_answered_duration,";
 		$sql.= " SUM(outbound_answered_count) AS outbound_answered_count";
 		$sql.= " FROM v_xml_cdr_call_center_agent_consolidate c";
-		$sql.= " WHERE c.start_stamp > '" . date("Y-m-d") . " 00:00:00' AND c.start_stamp < '" . date("Y-m-d") . " 23:59:59'";
+		$sql.= " WHERE TRUE";
+		$sql.= " AND c.start_stamp > '" . date("Y-m-d") . " 00:00:00' AND c.start_stamp < '" . date("Y-m-d") . " 23:59:59'";
 		$sql.= " AND c.cc_agent_name IS NOT NULL AND c.cc_agent_name <> ''";
+		$sql.= " AND domain_uuid = '$domain_uuid' ";
 		$sql.= " GROUP BY c.cc_agent_name";
 		$prep_statement = $db->prepare(check_sql($sql));
 		$prep_statement->execute();
 		$agent_consolidate = $prep_statement->fetchAll(PDO::FETCH_NAMED);
 		unset($prep_statement);
 		
-		// error_log("sql = $sql/n");
 		foreach ($agent_logged as $name => $row)
 		{
 			foreach ($agent_consolidate as $row2)
@@ -348,8 +366,8 @@
 			geral tma entrada de toda operacao
 		*/
 		
-		$tmp_total_count    = intval($queue_consolidate[0]["answered_count"]) + intval($queue_consolidate[0]["outbound_answered_count"]);
-		$tmp_total_duration = intval($queue_consolidate[0]["answered_duration"]) + intval($queue_consolidate[0]["outbound_answered_duration"]);					
+		$tmp_total_count    = $queue_consolidate[0]["answered_count"] + $queue_consolidate[0]["outbound_answered_count"];
+		$tmp_total_duration = $queue_consolidate[0]["answered_duration"] + $queue_consolidate[0]["outbound_answered_duration"];					
 		$tmp_total_tma = $tmp_total_duration / $tmp_total_count;
 		$tmp_total_tma = gmdate("H:i:s", intval($tmp_total_tma));
 
@@ -361,7 +379,7 @@
 		$tmp_outbound_answered_count    = check_str0($queue_consolidate[0]["outbound_answered_count"]);
 		$tmp_outbound_answered_duration = check_str0($queue_consolidate[0]["outbound_answered_duration"]);
 		$tmp_outbound_answered_tma      = check_str0($tmp_outbound_answered_duration / $tmp_outbound_answered_count);
-		$tmp_outbound_answered_tma      = gmdate("H:i:s", $tmp_outbound_answered_tma);				
+		$tmp_outbound_answered_tma      = gmdate("H:i:s", intval($tmp_outbound_answered_tma));				
 		
 		/** 
 			inbound
@@ -370,7 +388,7 @@
 		$tmp_inbound_answered_count    = check_str0($queue_consolidate[0]["answered_count"]);
 		$tmp_inbound_answered_duration = check_str0($queue_consolidate[0]["answered_duration"]);
 		$tmp_inbound_answered_tma      = check_str0($tmp_inbound_answered_duration / $tmp_inbound_answered_count);
-		$tmp_inbound_answered_tma      = gmdate("H:i:s", $tmp_inbound_answered_tma);
+		$tmp_inbound_answered_tma      = gmdate("H:i:s", intval($tmp_inbound_answered_tma));
 		
 		$tme_queue_duration = check_str0($queue_consolidate[0]["queue_duration"]); //tempo fila das atendidas
 	
@@ -381,17 +399,17 @@
 		$tmp_canceled_count    = check_str0($queue_consolidate[0]["canceled_count"]);
 		$tmp_canceled_duration = check_str0($queue_consolidate[0]["canceled_duration"]);
 		$tmp_canceled_tma      = check_str0($tmp_canceled_duration / $tmp_canceled_count);
-		$tmp_canceled_tma      = gmdate("H:i:s", $tmp_canceled_tma);
+		$tmp_canceled_tma      = gmdate("H:i:s", intval($tmp_canceled_tma));
 		
 		$tmp_canceled_10          = check_str0($queue_consolidate[0]["canceled_10"]);
 		$tmp_canceled_10_duration = check_str0($queue_consolidate[0]["canceled_10_duration"]);
 		$tmp_canceled_10_tma      = check_str0($tmp_canceled_10_duration / $tmp_canceled_10_duration);
-		$tmp_canceled_10_tma      = gmdate("H:i:s", $tmp_canceled_10_tma);
+		$tmp_canceled_10_tma      = gmdate("H:i:s", intval($tmp_canceled_10_tma));
 		
 		$tmp_canceled_10_up          = check_str0($queue_consolidate[0]["canceled_10_up"]);
 		$tmp_canceled_10_up_duration = check_str0($queue_consolidate[0]["canceled_10_up_duration"]);
 		$tmp_canceled_10_up_tma      = check_str0($tmp_canceled_10_duration / $tmp_canceled_10_up);
-		$tmp_canceled_10_up_tma      = gmdate("H:i:s", $tmp_canceled_10_up_tma);
+		$tmp_canceled_10_up_tma      = gmdate("H:i:s", intval($tmp_canceled_10_up_tma));
 
 		/** 
 			Droped count (issue sound)
@@ -409,24 +427,25 @@
 			TME
 		*/
 		
-		$tme_queue_duration = gmdate("H:i:s", $tme_queue_duration / $tmp_inbound_answered_count);
+		$tme_queue_duration = $tme_queue_duration / $tmp_inbound_answered_count;
+		$tme_queue_duration = gmdate("H:i:s", intval($tme_queue_duration));
 
 		/** 
 			Max in a queue and answered
 		*/
 		
 		$tmp_max_time_queue_answered = check_str0($queue_consolidate[0]["max_time_queue_answered"]);
-		$tmp_max_time_queue_answered = gmdate("H:i:s", $tmp_max_time_queue_answered);
+		$tmp_max_time_queue_answered = gmdate("H:i:s", intval($tmp_max_time_queue_answered));
 		
 		/** 
 			Max in a queue and not answered
 		*/
 	
 		$tmp_max_time_queue_canceled = check_str0($queue_consolidate[0]["max_time_queue_canceled"]);
-		$tmp_max_time_queue_canceled = gmdate("H:i:s", $tmp_max_time_queue_canceled);
+		$tmp_max_time_queue_canceled = gmdate("H:i:s", intval($tmp_max_time_queue_canceled));
 		
 		$tmp_tma = check_str0($queue_consolidate[0]["max_time_queue_canceled"]);
-		$tmp_tma = gmdate("H:i:s", $tmp_tma);
+		$tmp_tma = gmdate("H:i:s", intval($tmp_tma));
 		
 		$ns_5  = check_str0($queue_consolidate[0]["ns_5"]);
 		$ns_10 = check_str0($queue_consolidate[0]["ns_10"]);
@@ -451,11 +470,8 @@
 		$tmp_value_ns = $tmp_value_ns + $ns_25 + $ns_30;
 		$tmp_perc_ns_30 = sprintf("%.0d%%", ($tmp_value_ns / $tmp_inbound_answered_count) * 100);
 		
-		$tmp_value_ns_60 = $tmp_value_ns + $ns_35 + $ns_40 + $ns_45 + $ns_50 + $ns_55 + $ns_60;
-		$tmp_perc_ns_60 = sprintf("%.0d%%", ($tmp_value_ns_60 / $tmp_inbound_answered_count) * 100);
-
-		$tmp_value_ns_60_up = $ns_60_up;
-		$tmp_perc_ns_60_up = sprintf("%.0d%%", ($tmp_value_ns_60_up / $tmp_inbound_answered_count) * 100);
+		$tmp_value_ns = $tmp_value_ns + $ns_35 + $ns_40 + $ns_45 + $ns_50 + $ns_55 + $ns_60;
+		$tmp_perc_ns_60 = sprintf("%.0d%%", ($tmp_value_ns / $tmp_inbound_answered_count) * 100);
 	}
 
 	$c_queue_agents_agents = 0;
@@ -495,7 +511,7 @@
 			$c_status = 2;								
 		}
 
-		if ($state == "Waiting" && $status != "On Break Max No Answer")  
+		if ($state == "Waiting") 
 		{
 			$c_queue_agents_available++;
 			$state = $text['label-waiting'];
@@ -516,13 +532,7 @@
 			$c_state = 2;
 		}
 
-		if ($status == "On Break Max No Answer")
-		{
-			$state = $text['label-state-on_break-max-no-answer'];
-			$c_state = 7;
-		}
-							
-		if(strtolower($status) == 'on break' || strtolower($status) == 'on break max no answer')
+		if(strtolower($status) == 'on break') 
 		{
 			$c_queue_agents_agents++;
 			$c_queue_agents_on_break++;
@@ -538,7 +548,7 @@
 	
 	foreach ($result_members as $row) 
 	{
-		// error_log("caller_number [tom]");
+		//error_log("caller_number [tom]");
 		$queue = $row['queue'];
 		$uuid = $row['uuid'];
 		$caller_number = $row['cid_number'];
@@ -588,7 +598,7 @@
 	function str_to_named_array($tmp_str, $tmp_delimiter) 
 	{
 		$tmp_array = explode ("\n", $tmp_str);
-		$result = [];
+		$result = array();
 		if (trim(strtoupper($tmp_array[0])) != "+OK") 
 		{
 			$tmp_field_name_array = explode ($tmp_delimiter, $tmp_array[0]);
@@ -636,20 +646,6 @@
 	
 	foreach ($agent_logged as $key_name => $agent_row)
 	{
-
-		/* lista das filas que os agentes estão logados */
-		$tmp_queue_list = [];
-		foreach($tier_result as $tier)
-		{
-			$tmp_tier_agent = explode('@', $tier['agent']);
-			if($tmp_tier_agent[0] == $agent_row['name'])
-			{
-				$tmp_tier_queue = explode('@', $tier['queue']);
-				$tmp_queue_list[] = $tmp_tier_queue[0];
-			}
-		}
-
-
 		/**
 			Array com as informações dos agentes
 		*/
@@ -717,8 +713,10 @@
 		
 		if (strtolower($agent_row['state']) == "in a queue call")
 		{
+			//error_log("state [".$agent_row['state']."] count[".count($result_members)."]");
 			foreach ($result_members as $members_row)
 			{
+				//error_log("serving_agent [".$members_row["serving_agent"]."]");
 				if ($members_row["serving_agent"] == $agent_row['name']."@".$_SESSION['domain_name'])
 				{
 					$phone = $members_row["cid_number"];
@@ -732,6 +730,12 @@
 		$a_uuid = $agent_row['uuid'];
 		$eavesdrop_uuid = $a_uuid;
 		$contact = $agent_row['contact'];
+		//jive 
+		//{cc_agent_extension=user/8005@onjive.myuc2b.com,originate_timeout=15,sip_cid_type=pid}sofia/gateway/59e88e32-9efd-4189-8099-3b51eb85afc5/8005
+		//$contact = "{cc_agent_extension=user/8005@onjive.myuc2b.com,originate_timeout=15,sip_cid_type=pid}sofia/gateway/59e88e32-9efd-4189-8099-3b51eb85afc5/8005";
+		
+		//normal 
+		//{call_timeout=30}user/2008@calliope.myuc2b.com
 		
 		$pattern = "/.*user\/(.*)@.*/i";
 		if (preg_match($pattern, $contact, $matches) === 1)
@@ -751,6 +755,7 @@
 			$a_exten = preg_replace("/{.*}/", "", $a_exten);
 			$a_exten = $contact;
 		}
+		
 		
 		$state = $agent_row['state'];
 		$status = $agent_row['status'];
@@ -786,15 +791,16 @@
 			if ($delay_time == 5) {$delay_status = "Ramal Ocupado";}
 		}
 		
-		$tmp_asw_duration = check_str0($agent_row["answered_duration"][0]) + check_str0($agent_row["outbound_answered_duration"]);
+		$tmp_asw_duration = check_str0($agent_row["answered_duration"]) + check_str0($agent_row["outbound_answered_duration"]);
 		$tmp_asw_count = check_str0($agent_row["answered_count"]) + check_str0($agent_row["outbound_answered_count"]);
-		$tma_agent =  check_str0($tmp_asw_duration) / check_str0($tmp_asw_count);
+		$tma_agent =  check_str0($tmp_asw_duration / $tmp_asw_count);
 		$tma_agent = gmdate("H:i:s", intval($tma_agent));
 		
 		$last_offered_call_seconds = $last_bridge_start;
 		$last_offered_call_length_hour = floor($last_offered_call_seconds/3600);
 		$last_offered_call_length_min = floor($last_offered_call_seconds/60 - ($last_offered_call_length_hour * 60));
 		$last_offered_call_length_sec = $last_offered_call_seconds - (($last_offered_call_length_hour * 3600) + ($last_offered_call_length_min * 60));
+		$last_offered_call_length_hour = sprintf("%02d", $last_offered_call_length_hour);
 		$last_offered_call_length_min = sprintf("%02d", $last_offered_call_length_min);
 		$last_offered_call_length_sec = sprintf("%02d", $last_offered_call_length_sec);
 		$last_bridge_start_length = $last_offered_call_length_hour.':'.$last_offered_call_length_min.':'.$last_offered_call_length_sec;
@@ -804,6 +810,7 @@
 		$last_offered_call_length_hour = floor($last_offered_call_seconds/3600);
 		$last_offered_call_length_min = floor($last_offered_call_seconds/60 - ($last_offered_call_length_hour * 60));
 		$last_offered_call_length_sec = $last_offered_call_seconds - (($last_offered_call_length_hour * 3600) + ($last_offered_call_length_min * 60));
+		$last_offered_call_length_hour = sprintf("%02d", $last_offered_call_length_hour);
 		$last_offered_call_length_min = sprintf("%02d", $last_offered_call_length_min);
 		$last_offered_call_length_sec = sprintf("%02d", $last_offered_call_length_sec);
 		$last_bridge_end_length = $last_offered_call_length_hour.':'.$last_offered_call_length_min.':'.$last_offered_call_length_sec;
@@ -813,6 +820,7 @@
 		$last_offered_call_length_hour = floor($last_offered_call_seconds/3600);
 		$last_offered_call_length_min = floor($last_offered_call_seconds/60 - ($last_offered_call_length_hour * 60));
 		$last_offered_call_length_sec = $last_offered_call_seconds - (($last_offered_call_length_hour * 3600) + ($last_offered_call_length_min * 60));
+		$last_offered_call_length_hour = sprintf("%02d", $last_offered_call_length_hour);
 		$last_offered_call_length_min = sprintf("%02d", $last_offered_call_length_min);
 		$last_offered_call_length_sec = sprintf("%02d", $last_offered_call_length_sec);
 		$last_offered_call_length = $last_offered_call_length_hour.':'.$last_offered_call_length_min.':'.$last_offered_call_length_sec;
@@ -840,7 +848,6 @@
 			$tmp_array = explode ("@", $state);
 			$phone = $tmp_array[0];
 			$a_uuid = $tmp_array[1];
-			$eavesdrop_uuid = $a_uuid;				 
 			
 			if ($att_xfer == true) {
 				fclose($fp);
@@ -865,7 +872,6 @@
 			$tmp_array = explode ("@", $state);
 			$phone = $tmp_array[0];
 			$a_uuid = $tmp_array[1];
-			$eavesdrop_uuid = $a_uuid;				 
 		}
 		
 		if (strtolower($status) == "on break" && strpos($state, 'ramal_local:') == 0)
@@ -911,12 +917,6 @@
 			$state = $text['label-in-a-queue-call'];
 			$c_state = 2;
 		}
-
-		if ($status == "On Break Max No Answer")
-		{
-			$state = $text['label-state-on_break-max-no-answer'];
-			$c_state = 7;
-		}
 		
 		if ($_SESSION['domains'][$domain_uuid]['agent'][$name]['last_status'] == null)
 		{
@@ -954,7 +954,7 @@
 			$_SESSION['domains'][$domain_uuid]['agent'][$name]['last_status_change'] = $time_now;
 		}
 		
-		$last_status_change_seconds = $time_now - $last_status_change;
+		$last_status_change_seconds = $time_now - $_SESSION['domains'][$domain_uuid]['agent'][$name]['last_status_change'];
 		$last_status_change_length_hour = floor($last_status_change_seconds/3600);
 		$last_status_change_length_min = floor($last_status_change_seconds/60 - ($last_status_change_length_hour * 60));
 		$last_status_change_length_sec = $last_status_change_seconds - (($last_status_change_length_hour * 3600) + ($last_status_change_length_min * 60));
@@ -983,14 +983,11 @@
 		/**
 			Queue Name
 		*/
-		$agents["queue"] = '';
+		$agents["queue"] = "";
 		if ($c_state == 2 || $c_state == 4) 
-		{
-			if(strlen($queue) > 0)
-			{
-				$queue = explode("@", $queue);
-				$agents["queue"] = $queue[0];
-			}
+		{		
+			$queue = explode("@", $queue);
+			$agents["queue"] = $queue[0];
 		}
 		
 		/**
@@ -998,7 +995,6 @@
 		*/
 		
 		$agents["name"] = $name;
-		$agents["queues_loggeds"] = implode(',',$tmp_queue_list);
 		
 		/**
 			Extension
@@ -1044,7 +1040,7 @@
 				$break_length = $break_length_hour.':'.$break_length_min.':'.$break_length_sec;
 				
 				$lsc = $time_now -  $last_status_change;
-				$lsc = gmdate("H:i:s", $lsc);
+				$lsc = gmdate("H:i:s", intval($lsc));
 				$agents["state"] = $break_name . " (" . $break_length . ")" . "<br>" . $lsc;
 			}
 		}
@@ -1065,9 +1061,17 @@
 			$agents["state"] = $state."<br>".ltrim(substr($last_status_change_length, 6, 2), '0')." seg.";
 		} else { //livre
 			$agents["class"] = $row_style_dashboard_[$c_state];
-			$lscs_h = gmdate("H:i:s", $last_status_change_seconds);
-			$lbe_h = gmdate("H:i:s", $time_now - $last_bridge_end - $wrap_up_time);
+			//$agents["state"] = $state."<br>".$last_status_change_length;
+			//$lsc = $time_now - $last_status_change;
+			$lscs_h = gmdate("H:i:s", intval($last_status_change_seconds));
+			//$lsc_h = gmdate("H:i:s", $time_now - $last_status_change);
+			
+			$lbe_h = $time_now - $last_bridge_end - $wrap_up_time;
+			$lbe_h = gmdate("H:i:s", intval($lbe_h));
 			$agents["state"] = "$state<br>$lscs_h";
+			//$agents["state"] = "$state<br>$lscs_h<br>$lbe_h";
+			//$agents["state"] = $state."<br>".$lscs_h."<Br>".$lsc_h."<Br>".$lbe_h;
+			//$agents["state"] = date('H:i:s',$last_status_change)."<br>".$last_status_change_seconds."<br>".$lsc."<br>".date('Y-m-d H:i:s');
 			
 			/*
 				last_bridge_end funciona para quando a chamada encerra e o agente fica livre
@@ -1083,7 +1087,7 @@
 		//$agents["last_status_change_length"] = $last_status_change_length;		
 		if ($c_state == 2 || strtolower($status) == "on outbound") {
 			$lbe = $time_now -  $last_bridge_start;
-			$lbe = gmdate("H:i:s", $lbe);
+			$lbe = gmdate("H:i:s", intval($lbe));
 			$agents["last_status_change_length"] = $lbe;
 		} else {
 			$lbe = "--:--:--";
@@ -1101,8 +1105,8 @@
 			Tempo Logado
 		*/
 		
-		$loged_time = time() - $first_login;
-		$loged_time = gmdate("H:i:s", $loged_time);
+		$loged_time = $time_now - $first_login;
+		$loged_time = gmdate("H:i:s", intval($loged_time));
 
 		$agents["loged_time"] = $loged_time;
 		$agents["direction"] = $direction;
@@ -1139,34 +1143,33 @@
 		}
 		else
 		{
-			if (permission_exists('call_center_active_options') || if_group("admin") || if_group("superadmin") || if_group("cc_manager") || if_group("Supervisor"))
+			if (permission_exists('call_center_active_options') || if_group("admin") || if_group("superadmin") || if_group("supervisor") || if_group("Supervisor"))
 			{
 				$q_caller_number = urlencode($phone);						
 				if (!$ext_gw) {
 					$orig_command="{origination_caller_id_name=eavesdrop,origination_caller_id_number=".$q_caller_number."}user/".$_SESSION['user']['extension'][0]['user']."@".$_SESSION['domain_name']." %26eavesdrop(".$a_uuid.")";
+					//error_log("orig_command 1 [$orig_command]");
 				} else {
 					$ext = $_SESSION['user']['extension'][0]['user'];
 					$ext = ltrim($ext,"X");
 					$ext = ltrim($ext,"x");
 					$orig_command="{origination_caller_id_name=eavesdrop,origination_caller_id_number=".$q_caller_number."}sofia/gateway/$ext_gw/".$ext." %26eavesdrop(".$eavesdrop_uuid.")";
+					//error_log("orig_command 2 [$orig_command]");
 				}
 				$tmp = $text['label-eavesdrop'];
 				if (strtolower($status) == 'on break') {
-					$tmp = "";
+					//error_log("caiua");
+					$orig_call="{origination_caller_id_name=c2c-".urlencode($name).",origination_caller_id_number=".$a_exten."}user/".$_SESSION['user']['extension'][0]['user']."@".$_SESSION['domain_name']." %26bridge(user/".$a_exten."@".$_SESSION['domain_name'].")";
+					$commands_agents .= "<a style=\"display: inline-block;\" href='javascript:void(0);' onclick=\"confirm_response = confirm('".$text['message-confirm']."');if (confirm_response){send_cmd('call_center_exec.php?cmd=originate+".$orig_call.")');}\"><i class=\"fas fa-phone\"></i></a>";
+				}else{
+					//echo "  <a href='javascript:void(0);' style='color: #444444;' onclick=\"confirm_response = confirm('".$text['message-confirm']."');if (confirm_response){send_cmd('call_center_exec.php?cmd=originate+".$orig_command.")');}\">".$tmp."</a>&nbsp;\n";
+					$commands_agents .= "<a href='javascript:void(0);' onclick=\"confirm_response = confirm('".$text['message-confirm']."');if (confirm_response){send_cmd('call_center_exec.php?cmd=originate+".$orig_command.")');}\"><i class=\"fas fa-headphones\"></i></a>";
 				}
-				$commands_agents .= "<a href='javascript:void(0);' onclick=\"confirm_response = confirm('".$text['message-confirm']."');if (confirm_response){send_cmd('call_center_exec.php?cmd=originate+".$orig_command.")');}\"><i class=\"fas fa-headphones\"></i></a>";
 			}
 		}
 		
 		$agents["commands"] = $commands_agents;
-
-		$managerAgent = '';
-		if (permission_exists('call_center_active_options') || if_group("admin") || if_group("superadmin") || if_group("supervisor") || if_group("Supervisor"))
-		{
-			$managerAgent = "<a class='uStatus' data-agent='".$agents["name"]."'><i class=\"fas fa-user\"></i></a>";
-		}
 		
-		$agents['manager'] = $managerAgent;
 		$call_center_queue["agents"][$x] = $agents;
 				
 		$x++;
@@ -1334,9 +1337,6 @@
 	$call_center_queue["queue"]["tmp_canceled_10_up_tma"] = $tmp_canceled_10_up_tma;
 	$call_center_queue["queue"]["tmp_max_time_queue_answered"] = $tmp_max_time_queue_answered;
 	$call_center_queue["queue"]["tmp_max_time_queue_canceled"] = $tmp_max_time_queue_canceled;
-	$call_center_queue["queue"]["tmp_value_ns"] = $tmp_value_ns_60;
-	$call_center_queue["queue"]["tmp_value_ns_up"] = $tmp_value_ns_60_up;
-	$call_center_queue["queue"]["tmp_inbound_answered_tma"] = $tmp_inbound_answered_tma;
 	
 	/**
 		Nível de Serviço
