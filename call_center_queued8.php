@@ -3,9 +3,6 @@
 	include "root.php";
 	require_once "resources/require.php";
 	require_once "resources/check_auth.php";
-
-	header("Content-Type: application/json");
-	header("Access-Control-Allow-Origin: *");
 	
 	if (permission_exists('call_center_active_view')) 
 	{
@@ -52,9 +49,6 @@
 	/** 
 		get the call center queue, agent and tiers list
 	*/
-	
-	//sqlite3
-	$dblite = new PDO('sqlite:/usr/local/freeswitch/db/callcenter.db');
 
 	if (!$fp) 
 	{
@@ -243,19 +237,9 @@
 		
 		$tmp_total_count    = $memcache_queue[0]->answered_count + $memcache_queue[0]->outbound_answered_count;
 		$tmp_total_duration = $memcache_queue[0]->answered_duration + $memcache_queue[0]->outbound_answered_duration;					
-		$tmp_total_tma = intval($tmp_total_duration) / intval($tmp_total_count);
-		$tmp_total_tma = gmdate("H:i:s", intval($tmp_total_tma));
+		$tmp_total_tma = $tmp_total_duration / $tmp_total_count;
+		$tmp_total_tma = gmdate("H:i:s", $tmp_total_tma);
 		
-		/** 
-			ns
-		*/
-
-		if(isset($memcache_queue[0]->ns_custom) && intval($memcache_queue[0]->answered_count) > 0) {
-			$tmp_total_ns = intval($memcache_queue[0]->answered_count) / intval($memcache_queue[0]->ns_custom);
-		} else {
-			$tmp_total_ns = 0;
-		}
-
 		/** 
 			outbound
 		*/
@@ -264,7 +248,7 @@
 		$tmp_outbound_answered_count    = check_str0($memcache_queue[0]->outbound_answered_count);
 		$tmp_outbound_answered_duration = check_str0($memcache_queue[0]->outbound_answered_duration);
 		$tmp_outbound_answered_tma      = check_str0($tmp_outbound_answered_duration / $tmp_outbound_answered_count);
-		$tmp_outbound_answered_tma      = gmdate("H:i:s", intval($tmp_outbound_answered_tma));				
+		$tmp_outbound_answered_tma      = gmdate("H:i:s", $tmp_outbound_answered_tma);				
 		
 		/** 
 			inbound
@@ -281,9 +265,9 @@
 			canceled
 		*/
 		
-		$tmp_canceled_count    = intval(check_str0($memcache_queue[0]->canceled_count));
-		$tmp_canceled_duration = intval(check_str0($memcache_queue[0]->canceled_duration));
-		$tmp_canceled_tma      = intval(check_str0($tmp_canceled_duration / $tmp_canceled_count));
+		$tmp_canceled_count    = check_str0($memcache_queue[0]->canceled_count);
+		$tmp_canceled_duration = check_str0($memcache_queue[0]->canceled_duration);
+		$tmp_canceled_tma      = check_str0($tmp_canceled_duration / $tmp_canceled_count);
 		$tmp_canceled_tma      = gmdate("H:i:s", $tmp_canceled_tma);
 		
 		$tmp_canceled_10          = check_str0($memcache_queue[0]->canceled_10);
@@ -312,8 +296,7 @@
 			TME
 		*/
 		
-		$tme_queue_duration = $tme_queue_duration / $tmp_inbound_answered_count;
-		$tme_queue_duration = gmdate("H:i:s", intval($tme_queue_duration));
+		$tme_queue_duration = gmdate("H:i:s", $tme_queue_duration / $tmp_inbound_answered_count);
 
 		/** 
 			Max in a queue and answered
@@ -467,10 +450,9 @@
 	}
 	
 	$joined_seconds_aux = intval($joined_seconds_aux) / intval($joined_menbers_count);
-	$queue_joined_length_hour = floor(intval($joined_seconds_aux)/3600);
+	$queue_joined_length_hour = floor($joined_seconds_aux/3600);
 	$queue_joined_length_min = floor($joined_seconds_aux/60 - ($queue_joined_length_hour * 60));
 	$queue_joined_length_sec = $joined_seconds_aux - (($queue_joined_length_hour * 3600) + ($queue_joined_length_min * 60));
-	$queue_joined_length_hour = sprintf("%02d", $queue_joined_length_hour);
 	$queue_joined_length_min = sprintf("%02d", $queue_joined_length_min);
 	$queue_joined_length_sec = sprintf("%02d", $queue_joined_length_sec);
 	$queue_joined_length = $queue_joined_length_hour.':'.$queue_joined_length_min.':'.$queue_joined_length_sec;
@@ -482,7 +464,7 @@
 	function str_to_named_array($tmp_str, $tmp_delimiter) 
 	{
 		$tmp_array = explode ("\n", $tmp_str);
-		$result = array();
+		$result = '';
 		if (trim(strtoupper($tmp_array[0])) != "+OK") 
 		{
 			$tmp_field_name_array = explode ($tmp_delimiter, $tmp_array[0]);
@@ -672,7 +654,7 @@
 		$tmp_asw_duration = check_str0($agent_row['memcache'][0]->answered_duration) + check_str0($agent_row['memcache'][0]->outbound_answered_duration);
 		$tmp_asw_count = check_str0($agent_row['memcache'][0]->answered_count) + check_str0($agent_row['memcache'][0]->outbound_answered_count);
 		$tma_agent =  check_str0($tmp_asw_duration / $tmp_asw_count);
-		$tma_agent = gmdate("H:i:s", intval($tma_agent));
+		$tma_agent = gmdate("H:i:s", $tma_agent);
 		
 		$last_offered_call_seconds = $last_bridge_start;
 		$last_offered_call_length_hour = floor($last_offered_call_seconds/3600);
@@ -930,7 +912,7 @@
 		/**
 			Tempo Logado
 		*/
-		
+
 		if(strlen($first_login) > 0)
 		{
 			$sql  = "select * ";
@@ -938,7 +920,6 @@
 			$sql .= "where domain_uuid = '".$domain_uuid."' ";
 			$sql .= "and cc_queue = '".$queue_name."' ";
 			$sql .= "and cc_agent_name = '".$agent_row['name']."' ";
-			$sql .= "order by start_epoch desc;";
 			$sql .= "limit 1;";
 			$prep_statement = $db->prepare(check_sql($sql));
 			$prep_statement->execute();
@@ -1076,13 +1057,6 @@
 			$switch_cmd = "uuid_getvar $session_uuid origination_src_name";
 			$origination_src_name = trim(event_socket_request($fp, 'api '.$switch_cmd));
 			if ($origination_src_name == "_undef_" || $origination_src_name == "-ERR") {$origination_src_name = "";}
-			
-			if($origination_src_name == "-ERR No such channel!")
-			{
-				$sql = "delete from members where uuid='$uuid';";
-				$prep_statement = $dblite->prepare($sql);
-				$prep_statement->execute();
-			}
 			
 			$switch_cmd = "uuid_getvar $session_uuid cc_base_score";
 			$level_priority = trim(event_socket_request($fp, 'api '.$switch_cmd));
@@ -1249,11 +1223,6 @@
 	$call_center_queue["joined_menbers_count"] = $joined_menbers_count;
 	$call_center_queue["queue_joined_length"] = $queue_joined_length;
 	$call_center_queue["TMA"] = $tmp_total_tma;
-	if(is_numeric($tmp_total_ns)) {
-		$call_center_queue["TS"] = $tmp_total_ns . "%";
-	} else {
-		$call_center_queue["TS"] = "0%";
-	}
 	$call_center_queue["TME"] = $tme_queue_duration;
 	
 	die(json_encode($call_center_queue));
