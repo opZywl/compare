@@ -60,11 +60,26 @@
 			
 		]);
 		
-		$rBody = json_decode($response->getBody());
+		$rBody = json_decode($response->getBody(), true);
 	}
 	catch (\GuzzleHttp\Exception\RequestException $e)
 	{
 		require_once "resources/omnichannel_exception.php";
+	}
+	
+	$rFavorites = array();
+	if(count($rBody["favorites"]) > 0) {
+		$rFavorites = $rBody["favorites"];
+	}
+	
+	$rUsersAgent = array();
+	if(count($rBody["usersAgent"]) > 0) {
+		$rUsersAgent = $rBody["usersAgent"];
+	}
+	
+	$rDepartments = array();
+	if(count($rBody["departments"]) > 0) {
+		$rDepartments = $rBody["departments"];
 	}
 	
 ?>
@@ -73,6 +88,24 @@
 			color: #626262;
 			background-color: #e6e6e6;
 			border-radius: 10px;
+		}
+		
+		.badge {
+			font-family: 'Montserrat';
+			font-size: 12px;
+			font-weight: 500;
+			background: transparent;
+			background-color: transparent;
+			padding: 8px 10px 0px 10px;
+			border-radius: 6px;
+			min-width: 15px;
+			min-height: 20px;
+		}
+		
+		.badge-owner {
+			margin: 2px 2px;
+			color: #fff;
+			background-color: #84a3e1;
 		}
 	</style>
 	
@@ -114,27 +147,57 @@
 					<tr>
 						<th style="width: 120px;"><?= $text['label-tag']; ?></th>
 						<th><?= $text['label-message']; ?></th>
+						<th><?= $text['label-users']; ?></th>
+						<th><?= $text['label-department']; ?></th>
 						<th class="table-options"></th>
 					</tr>
 				</thead>
 				<tbody>
 					<?php
-						foreach($rBody as $row)
+						foreach($rFavorites as $row)
 						{
 						?>
 							<tr>
 								<td class="v-align-middle">
-									<p><span class="label label-favorites"><?= $row->tag; ?></span></p>
+									<p><span class="label label-favorites"><?= $row["tag"]; ?></span></p>
 								</td>
 								<td class="v-align-middle">
-									<p><?= $row->name; ?></p>
+									<p><?= $row["name"]; ?></p>
+								</td>
+								<td class="v-align-middle">
+									<?php
+										$userId = $row["userId"];
+										if(count($rUsersAgent) > 0) {
+											foreach($rUsersAgent as $row2) {
+												if(in_array($row2["_id"], $userId)) {
+												?>
+													<span class="badge badge-owner" ><?= $row2["name"]; ?></span>
+												<?php
+												}
+											}
+										}
+									?>
+								</td>
+								<td class="v-align-middle">
+									<?php
+										$departmentId = $row["departmentId"];
+										if(count($rDepartments) > 0) {
+											foreach($rDepartments as $row2) {
+												if(in_array($row2["_id"], $departmentId)) {
+												?>
+													<span class="badge badge-owner" ><?= $row2["name"]; ?></span>
+												<?php
+												}
+											}
+										}
+									?>
 								</td>
 								<td class="v-align-middle">
 									<?php
 									if (permission_exists('omnichannel_favorites_edit'))
 									{
 										?>
-											<a href='favorites_edit.php?id=<?= $row->_id; ?>' alt='<?= $text['button-edit']; ?>'><i class="fal fa-edit"></i></a>
+											<a href='favorites_edit.php?id=<?= $row["_id"]; ?>' alt='<?= $text['button-edit']; ?>'><i class="fal fa-edit"></i></a>
 										<?php
 									}
 									?>
@@ -143,7 +206,7 @@
 									if (permission_exists('omnichannel_favorites_delete'))
 									{
 										?>
-											<a href='favorites_delete.php?id=<?= $row->_id; ?>' alt='<?= $text['button-delete']; ?>' onclick="return confirm('<?= $text['confirm-delete']; ?>')"><i class="fal fa-trash-alt"></i></a>
+											<a href='favorites_delete.php?id=<?= $row["_id"]; ?>' alt='<?= $text['button-delete']; ?>' onclick="return confirm('<?= $text['confirm-delete']; ?>')"><i class="fal fa-trash-alt"></i></a>
 										<?php
 									}
 									?>
