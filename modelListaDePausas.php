@@ -18,6 +18,12 @@
 		add multi-lingual support
 	*/
 
+	//variáveis de sessão
+    $_language = $_SESSION['domain']['language']['code'];
+    $_domain_name = $_SESSION['domain_name'];
+    $_username = $_SESSION['username'];
+    $_vendor = $_SESSION['switch']['vendor']['txt'];
+
 	foreach ($text as $key => $value)
 	{
 		$text[$key] = $value[$_SESSION['domain']['language']['code']];
@@ -39,114 +45,55 @@
 	$cc_queue = $_POST['CC_QUEUE'];
 	$start_stamp_begin = $_POST['DATA_INI'];
 	$start_stamp_end = $_POST['DATA_END'];
-	
-	if (strlen($start_stamp_begin) == 0 )
-	{
-		$start_stamp_begin = date('Y-m-d');
-		$tmp_start_stamp_begin = date('Y-m-d 00:00:00');		
-		$start_stamp_begin_epoch = strtotime($tmp_start_stamp_begin);
-	}
-	else
-	{
-		$start_stamp_begin_epoch = strtotime($start_stamp_begin);
-	}
-	
-	if (strlen($start_stamp_end) == 0 )
-	{
-		$start_stamp_end = date('Y-m-d');
-		$tmp_start_stamp_end = date('Y-m-d 23:59:59');
-		$start_stamp_end_epoch = strtotime($tmp_start_stamp_end);			
-	}
-	else
-	{
-		$start_stamp_end_epoch = strtotime($start_stamp_end);
-	}
-		
-	$sql_where_ands[] = "`c`.`start_epoch` BETWEEN ".$start_stamp_begin_epoch." AND ".$start_stamp_end_epoch;
+	$domain_name = $_SESSION['domain_name'];
 
-	if (strlen($cc_agent) > 0)
-	{
-		$sql_where_ands[] = "`c`.`cc_agent_name` = '".$cc_agent."'";
-	}
+
+	$filter = $filter;
+	$cc_queue = $cc_queue;
+	$cc_agent = $cc_agent;
+	$start_stamp_begin = $_POST['DATA_INI'];
+	$start_stamp_end = $_POST['DATA_END'];
+	$direction = $direction_tmp;	
+	$caller_id_number = "";
+	$destination_number = "";
+	$extension = "";
+	$finalization = "";
+	$finalization_member = "";
+	$finalization_agent = $finalization_agent;
+	$uuid = "";
+	$ring_duration = "";
+	$ring_duration = "";
+	$domain_name = $_SESSION['domain_name'];
+
+	//$cc_state_in_breaks = '["on break","break_return"]';
+
+	$cc_state_in = "'on break','break_return'";
 	
-	if (strlen($cc_queue) > 0)
-	{
-		$sql_where_ands[] = "`c`.`cc_queue` = '".$cc_queue."@".$_SESSION["domain_name"]."'";
-	}
+	$state_only = true;
+
+	//pega o ${recording_dir}
 	
-	if (sizeof($sql_where_ands) > 0)
+	$fp = event_socket_create($_SESSION['event_socket_ip_address'], $_SESSION['event_socket_port'], $_SESSION['event_socket_password']);
+	if ($fp)
 	{
-		$sql_where = " and ".implode(" and ", $sql_where_ands);
+		$switch_cmd = "eval \${recordings_dir}";
+		$_recordings_dir = trim(event_socket_request($fp, 'api '.$switch_cmd));
+	}
+	fclose($fp);
+
+	//verificar data_ini e data_end para pegar db_date
+	$db_date_ini_tmp_epoch = strtotime($start_stamp_begin);
+	$db_date_end_tmp_epoch = strtotime($start_stamp_end);
+	$db_date_ini_tmp = date('Y-m-d', $db_date_ini_tmp_epoch);
+	$db_date_end_tmp = date('Y-m-d', $db_date_end_tmp_epoch);
+	$db_date = '';
+	if($db_date_ini_tmp == $db_date_end_tmp)
+	{
+		$db_date = $db_date_ini_tmp;
 	}
 
-	$sql_where = " and `c`.domain_uuid = '$domain_uuid' and `c`.break_uuid is not null and `c`.`agent_status` = 'on break' " . $sql_where;
-
-	$sql  = " SELECT";
-	$sql .= " count(1) as recordsTotal ";
-	$sql .= " FROM ((`calliopedb`.`v_xml_cdr_call_center_agent` `c`";
-	$sql .= " LEFT JOIN `calliopedb`.`v_call_center_break_breaks` `b` on((`b`.`call_center_break_break_uuid` = `c`.`break_uuid`)))";
-	$sql .= " LEFT JOIN `calliopedb`.`v_xml_cdr` `x` on((`x`.`uuid` = `c`.`cdr_uuid`)))";
-	$sql .= " WHERE ((`c`.`agent_status` IN ('on break', 'break_return'))";
-	$sql .= " AND (`c`.`cc_queue` IS NOT NULL))";
-	$sql .= $sql_where;
-	$sql .= " ORDER BY `c`.`cc_agent_name`, `c`.`start_epoch`";
-	$prep_statement = $db->prepare(check_sql($sql));
-	$prep_statement->execute();
-	$row = $prep_statement->fetch(PDO::FETCH_ASSOC);
+	require_once "../xml_cdr_call_center_agent_historico/model_agent_historico.php";
 	
-	if ($row['recordsTotal'] > 0)
-	{
-		$recordsTotal = $row['recordsTotal'];
-	}
-	else
-	{
-		$recordsTotal = '0';
-	}
-	
-	
-	$sql  = " 
-		SELECT * FROM (
-	SELECT";
-	$sql .= " `c`.`domain_uuid` AS `domain_uuid`,";
-	$sql .= " `c`.`break_uuid` AS `break_uuid`,";
-	$sql .= " `c`.`start_epoch` AS `start_epoch`,";
-	$sql .= " `c`.`cc_agent_name` AS `Agent`,";
-	$sql .= " substring_index(`c`.`cc_queue`, '@', 1) AS `Queue`,";
-	$sql .= " `c`.`agent_status` AS `Break`,";
-	$sql .= " round((`b`.`break_timeout` * 60),0) AS `Max_Time_Allowed`,";
-	$sql .= " `c`.`start_epoch` AS `Date`,";
-	$sql .= " `c`.`start_epoch` AS `Hour`,";
-	$sql .= " if((`c`.`agent_status` = 'call_start'),`x`.`end_epoch`, `c`.`end_epoch`) AS `End_Time`,";
-	$sql .= " sec_to_time(if((`c`.`agent_status` = 'call_start'),(`x`.`end_epoch` - `x`.`start_epoch`),(`c`.`end_epoch` - `c`.`start_epoch`))) AS `Duration`,";
-	$sql .= " `b`.`break_name` AS `Break_Name`,";
-	$sql .= " (CASE `c`.`agent_status`";
-	$sql .= " WHEN 'on break' THEN sec_to_time(`c`.`duration`)";
-	$sql .= " ELSE ''";
-	$sql .= " END) AS `Break_Duration`,";
-	$sql .= " round(`c`.`duration`, 0) AS `Break_Minutes`,";
-	$sql .= " (CASE";
-	$sql .= " WHEN isnull(`c`.`duration`) THEN '0'";
-	$sql .= " WHEN (`b`.`break_timeout` > 0) THEN (round(`c`.`duration`, 0) - round((`b`.`break_timeout` * 60),0))";
-	$sql .= " ELSE '0'";
-	$sql .= " END) AS `Break_Exceeded`";
-	$sql .= " FROM ((`calliopedb`.`v_xml_cdr_call_center_agent` `c`";
-	$sql .= " LEFT JOIN `calliopedb`.`v_call_center_break_breaks` `b` on((`b`.`call_center_break_break_uuid` = `c`.`break_uuid`)))";
-	$sql .= " LEFT JOIN `calliopedb`.`v_xml_cdr` `x` on((`x`.`uuid` = `c`.`cdr_uuid`)))";
-	$sql .= " WHERE ((`c`.`agent_status` IN ('on break', 'break_return'))";
-	$sql .= " AND (`c`.`cc_queue` IS NOT NULL))";
-	$sql .= $sql_where;
-	$sql .= " ORDER BY `c`.`cc_agent_name`, `c`.`start_epoch`,  `c`.`end_epoch` DESC
-	
-	)a
-	GROUP BY Agent, break_uuid, start_epoch
-	ORDER BY start_epoch asc
-	
-	";	
-	
-	if(isset($requestData['start']))
-	{
-		$sql .= " LIMIT " . $requestData['start'] . " ," . $requestData['length'] . "   ";
-	}
 	
 	$tmp_file.= $sql;
 	
@@ -166,15 +113,19 @@
 		header('Set-Cookie: fileDownload=true; path=/');
 		header('Cache-Control: max-age=60, must-revalidate');
 		header("Content-type: text/csv");
-		header('Content-Disposition: attachment; filename="' . uuid() .'.csv"');
+		$from = date('Y-m-d-H-i-s', $start_stamp_begin_epoch);
+		$to = date('Y-m-d-H-i-s', $start_stamp_end_epoch);
+		$file_name = "Lista_Pausas"."_".$text['from']."_".$from."_".$text['to']."_".$to."_".time();
+		header('Content-Disposition: attachment; filename="' . $file_name . '.csv"');
+		
 		
 		$t = array();
 		
 		array_push($t, $text['label-agent']);
 		array_push($t, $text['label-pause_name']);
+		array_push($t, $text['label-queue']);
 		array_push($t, $text['label-date']);
 		array_push($t, $text['label-time']);
-		array_push($t, $text['label-end_time']);
 		array_push($t, $text['label-break_timeout']);
 		array_push($t, $text['label-duration']);
 		array_push($t, $text['label-break_exceeded']);
@@ -185,25 +136,48 @@
 		
 		fputcsv($fh, $t, ";");
 
-		foreach ($result as $row)
+		foreach ($result_agent_historico as $row)
 		{
 			$a = array();
-			$a[] = $row["Agent"];
-			$a[] = $row["Break_Name"];
-			$a[] = date('Y-m-d', $row["Date"]);
-			$a[] = date('H:i:s', $row["Hour"]);
-			$a[] = date('H:i:s', $row["End_Time"]);
-			$a[] = sprintf('%02d:%02d:%02d', ($row["Max_Time_Allowed"]/ 3600),($row["Max_Time_Allowed"]/ 60 % 60), $row["Max_Time_Allowed"]% 60);
-			if(intval($row["Break_Exceeded"]) > 0)
-			{
-				$a[] = $row["Duration"];
-				$a[] = sprintf('%02d:%02d:%02d', ($row["Break_Exceeded"]/ 3600),($row["Break_Exceeded"]/ 60 % 60), $row["Break_Exceeded"]% 60);
-			}
-			else
-			{
-				$a[] = $row["Duration"];
-				$a[] = '00:00:00';
-			}
+
+			//agente
+            $a[] = $row["agent_name"];
+            
+            //pausa nome
+            if($row['break_name'] == 'break_return')
+            {
+                $a[] = 'PAUSA - MAX SEM RESPOSTA';
+            }
+            else
+            {
+                $a[] = $row["break_name"];
+            }
+
+            //FILA 
+            $a[] = $row["queue_name"];
+
+            //data
+            $a[] = date('Y-m-d', $row["status_epoch"]);
+
+            //hora
+            $a[] = date('H:i:s', $row["status_epoch"]);
+
+
+                //Tempo maximo permitido
+            $a[] = sprintf('%02d:%02d:%02d', ($row["Max_Time_Allowed"]/ 3600),($row["Max_Time_Allowed"]/ 60 % 60), $row["Max_Time_Allowed"]% 60);
+            
+            if(intval($row["Break_Exceeded"]) > 0)
+            {
+                $a[] = gmdate("H:i:s", $row["break_duration"]);
+                $a[] = sprintf('%02d:%02d:%02d', ($row["Break_Exceeded"]/ 3600),($row["Break_Exceeded"]/ 60 % 60), $row["Break_Exceeded"]% 60);
+            }
+            else
+            {
+                
+                $a[] = gmdate("H:i:s", $row["break_duration"]);
+                $a[] = "00:00:00";
+            }
+
 			fputcsv($fh, $a, ";");
 		}
 		
@@ -219,23 +193,47 @@
 	}
 	
 	$nested = array();
-	foreach($result as $row)
+	foreach($result_agent_historico as $row)
 	{
 		$a = array();
-		$a[] = $row["Agent"];
-		$a[] = $row["Break_Name"];
-		$a[] = date('Y-m-d', $row["Date"]);
-		$a[] = date('H:i:s', $row["Hour"]);
-		$a[] = date('H:i:s', $row["End_Time"]);
+		
+		//agente
+		$a[] = $row["agent_name"];
+		
+		//pausa nome
+		if($row['break_name'] == 'break_return')
+		{
+			$a[] = 'PAUSA - MAX SEM RESPOSTA';
+		}
+		else
+		{
+			$a[] = $row["break_name"];
+		}
+
+		//FILA 
+		$a[] = $row["queue_name"];
+
+		//data
+		$a[] = date('Y-m-d', $row["status_epoch"]);
+
+		//hora
+		$a[] = date('H:i:s', $row["status_epoch"]);
+		
+		//HORA FIM
+		//$a[] = date('H:i:s', $break_duration);
+		
+		//Tempo maximo permitido
 		$a[] = "<span class='badge badge-warning'>".sprintf('%02d:%02d:%02d', ($row["Max_Time_Allowed"]/ 3600),($row["Max_Time_Allowed"]/ 60 % 60), $row["Max_Time_Allowed"]% 60)."</span>";
+		
 		if(intval($row["Break_Exceeded"]) > 0)
 		{
-			$a[] = "<span class='badge badge-important'>".$row["Duration"]."</span>";
+			$a[] = "<span class='badge badge-important'>".gmdate("H:i:s", $row["break_duration"])."</span>";
 			$a[] = "<span class='badge badge-important'>".sprintf('%02d:%02d:%02d', ($row["Break_Exceeded"]/ 3600),($row["Break_Exceeded"]/ 60 % 60), $row["Break_Exceeded"]% 60)."</span>";
 		}
 		else
 		{
-			$a[] = "<span class='badge badge-success'>".$row["Duration"]."</span>";
+			
+			$a[] = "<span class='badge badge-success'>".gmdate("H:i:s", $row["break_duration"])."</span>";
 			$a[] = "<span class='badge badge-success'>00:00:00</span>";
 		}
 		$nested[] = $a;
@@ -275,4 +273,27 @@
 	);
 	
 	echo json_encode($json_data);
+
+	function getQueuesCcManager($username)
+	{
+		global $domain_uuid;
+		global $domain_name;
+		global $db;
+		$sql = "select CONCAT(\"'\",queue_name,\"'\") as queue_name from v_call_center_queues ";
+		$sql .= "where domain_uuid = '$domain_uuid' ";
+		$sql .= "and queue_cc_manager LIKE '%@".$username."@%' ";
+		$sql .= "order by ";
+		$sql .= "queue_extension asc ";
+		$prep_statement = $db->prepare(check_sql($sql));
+		$prep_statement->execute();
+		$result_e = $prep_statement->fetchAll(PDO::FETCH_NAMED);
+		$queueIn = '';
+		foreach($result_e as $queue)
+		{
+			$queueIn .= $queue['queue_name'] . ',';
+		}
+		$queueIn = substr($queueIn, 0, -1);
+		
+		return $queueIn;
+	}
 ?>
