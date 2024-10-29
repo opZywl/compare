@@ -207,7 +207,6 @@
 				,sofia_profile_name	
 				,destination_number
 				,sip_to_user
-				,sip_from_user
 				,caller_id_number
 				,dialed_user	
 				,FROM_UNIXTIME(start_epoch)
@@ -223,7 +222,6 @@
 					,m_a.sofia_profile_name	
 					,m_a.destination_number
 					,m_a.sip_to_user
-					,m_a.sip_from_user
 					,m_a.caller_id_number
 					,m_a.dialed_user	
 					,FROM_UNIXTIME(m_a.start_epoch)
@@ -248,8 +246,7 @@
 						WHEN  m_a.direction  = 'inbound' AND NOT @is_ext AND LENGTH(m_a.sip_to_user ) >= 8 THEN 'inbound_car_pbx'
 						
 						/*RAMAL/PUBLICA -> PABX caso de chipeira com user <7, porém caller >= 8*/
-						/*WHEN  m_a.direction  = 'inbound' AND @is_ext AND LENGTH(m_a.caller_id_number) >= 8 THEN 'inbound_car_pbx'*/
-						WHEN  m_a.direction  = 'inbound' AND @is_ext AND LENGTH(m_a.sip_from_user) >= 8 THEN 'inbound_car_pbx'
+						WHEN  m_a.direction  = 'inbound' AND @is_ext AND LENGTH(m_a.caller_id_number) >= 8 THEN 'inbound_car_pbx'
 						
 						
 						/*RAMAL -> PABX is_ext*/
@@ -333,7 +330,7 @@
 		if ( in_array('outbound', $direction) && in_array('internal', $direction) )
 		{
 			$sql.="\n\n		/*OUTBOUND*/";
-			$sql.="\n	AND direction_r IN ('inbound_pbx_car', 'local_ext_pbx', 'outbound_ext_pbx')";
+			$sql.="\n	AND direction_r IN ('outbound_pbx_car', 'local_ext_pbx', 'outbound_ext_pbx')";
 		}
 		
 	}
@@ -404,14 +401,6 @@
 			CREATE TEMPORARY TABLE tmp_tbl_inbound AS 			
 			SELECT * FROM tmp_tbl;
 
-			DROP TABLE IF EXISTS tmp_tbl_transf1;
-			CREATE TEMPORARY TABLE tmp_tbl_transf1 AS 			
-			SELECT * FROM tmp_tbl;
-
-			DROP TABLE IF EXISTS tmp_tbl_transf2;
-			CREATE TEMPORARY TABLE tmp_tbl_transf2 AS 			
-			SELECT * FROM tmp_tbl;
-
 			DROP TABLE IF EXISTS tmp_outbound_originator;
 			CREATE TEMPORARY TABLE tmp_outbound_originator AS 			
 			SELECT * FROM tmp_tbl;
@@ -422,10 +411,6 @@
 
 			DROP TABLE IF EXISTS tmp_local_wo_originator;
 			CREATE TEMPORARY TABLE tmp_local_wo_originator AS 			
-			SELECT * FROM tmp_tbl;
-
-			DROP TABLE IF EXISTS tmp_local_wo_originator_4;
-			CREATE TEMPORARY TABLE tmp_local_wo_originator_4 AS 			
 			SELECT * FROM tmp_tbl;
 
 			DROP TABLE IF EXISTS tmp_outbound_bridge;
@@ -472,15 +457,7 @@ SELECT * FROM
 			,direction_r
 			,r_a.sofia_profile_name
 			,v_a.caller_id_name caller_id_name_a
-			
-			/*,v_a.caller_id_name caller_id_name_a*/
-			/*Transferencias *4 a leg de destino estava em o número do tel de origem*/
-			,CASE
-				WHEN v_b.caller_id_number IS NOT NULL THEN v_a.caller_id_number
-			 	WHEN v_b.transfer_to IS NOT NULL THEN v_b.transfer_to
-				WHEN v_a.sip_from_user IS NOT NULL THEN v_a.sip_from_user
-			ELSE v_b.caller_id_number
-			END caller_id_number_a
+			,v_a.caller_id_number AS caller_id_number_a
 			
 			,CASE 
 				WHEN v_a.sip_to_user is NULL THEN v_a.destination_number 
@@ -502,24 +479,18 @@ SELECT * FROM
 				
 				/*é a leg do ramal q fez transferencia *4*/				
 				when r_b_originator.uuid IS NOT NULL AND v_b_originator.last_app = 'att_xfer' then 'ATT_TRANSFER'
-				
-				when v_a.referred_by_user IS NOT NULL then 'ATT_TRANSFER'
-				
 			ELSE NULL
 			END call_transferred
 			
 			,CASE				
 				/*transferencia *4 com Loopback*/
-				
-				WHEN r_b_originator.uuid IS NOT NULL AND v_b_originator.last_app = 'att_xfer' and v_b_L_B.caller_id_number is not null then CONCAT('De: ', v_b_originator.sip_to_user)
-				/*WHEN r_b_originator.uuid IS NOT NULL AND v_b_originator.last_app = 'att_xfer' and v_b_L_B.caller_id_number is not null then CONCAT('De: ', v_b_L_B.caller_id_number)*/
+				WHEN r_b_originator.uuid IS NOT NULL AND v_b_originator.last_app = 'att_xfer' and v_b_L_B.caller_id_number is not null then CONCAT('De: ', v_b_L_B.caller_id_number)
 				
 				WHEN r_b_originator.uuid IS NOT NULL AND v_b_originator.last_app = 'att_xfer' then CONCAT('De: ', v_b.caller_id_number)
 				WHEN v_b.last_app = 'transfer' then CONCAT('Para: ', v_b.digits)
 				WHEN v_b.last_app = 'att_xfer' then CONCAT('Para: ', v_b.digits)
 				WHEN r_b_originator.uuid IS NOT NULL AND v_b_originator.last_app = 'att_xfer' then CONCAT('De: ', v_b.sip_from_user)
 				
-				when v_a.referred_by_user IS NOT NULL then CONCAT('De: ', v_a.referred_by_user)
 			ELSE NULL
 			END call_transferred_to
 
@@ -585,7 +556,7 @@ else
 			
 if ($is_jive)
 {
-	$sql.="\n				AND LENGTH(m_a.sip_from_user ) >= 8";
+	$sql.="\n				AND LENGTH(m_a.caller_id_number ) >= 8";
 	$sql.="\n				AND m_a.direction = 'inbound'";
 }
 else
@@ -680,8 +651,7 @@ $sql.="\n		)a
 			,'TRUE' AS answered_carrier
 			,r_b.start_epoch start_epoch_b
 			,r_b.answer_epoch answer_epoch_b
-			/*,(r_b.end_epoch - r_b.answer_epoch) AS answer_duraction_b*/
-			,(r_b.end_epoch - r_a.answer_epoch) AS answer_duraction_b
+			,(r_b.end_epoch - r_b.answer_epoch) AS answer_duraction_b
 			,r_a.end_epoch as end_epoch_a
 			,r_b.end_epoch as end_epoch_b
 			,v_a.hangup_cause
@@ -716,7 +686,7 @@ $sql.="\n		)a
 				-- SELECT *
 				,m_b.*
 			FROM 
-				tmp_tbl_transf1 m_b
+				tmp_tbl_inbound m_b
 			WHERE TRUE";
 
 if (in_array("inbound", $direction))
@@ -889,7 +859,7 @@ $sql.="\n		)a
 				-- SELECT *
 				,m_b.*
 			FROM 
-				tmp_tbl_transf2 m_b
+				tmp_tbl_inbound m_b
 			WHERE TRUE";
 
 if (in_array("inbound", $direction))
@@ -959,7 +929,7 @@ $sql.="\n		)a
 			,r_a.uuid uuid_a
 			,r_b.uuid uuid_b
 			,'' uuid_L_B
-			,r_last_bridge.uuid uuid_b_originator
+			,'' uuid_b_originator
 			,r_b.call_back_params is_callback_b
 			,r_a.call_back_params is_callback_a
 	
@@ -1057,9 +1027,6 @@ $sql.="\n			ELSE 'outbound'
 			,r_b.answer_epoch answer_epoch_b
 			
 			,CASE 
-				/*como é saída, se basear pela leg B, pq ela é transferida...*/
-				/*WHEN r_a.answer_epoch > 0  THEN r_a.end_epoch -  r_a.answer_epoch*/
-				WHEN r_last_bridge.answer_epoch > 0  THEN r_last_bridge.end_epoch -  r_b.answer_epoch
 				WHEN r_b.answer_epoch > 0  THEN r_b.end_epoch -  r_b.answer_epoch
 			ELSE 0			
 			END AS answer_duraction_a
@@ -1082,10 +1049,7 @@ $sql.="\n			ELSE 'outbound'
 			
 			,'' gateway_name
 			,v_a.protocol protocol
-			,CASE
-				WHEN (LENGTH(dialed_user_b) < 8 AND b_uuid_a <> o_uuid_a) THEN v_c.record_session
-			ELSE v_b.cc_record_filename
-			END cc_record_filename_b
+			,v_b.cc_record_filename AS cc_record_filename_b
 			,v_b.record_session AS record_session_b
 			,v_a.record_session AS record_session_a
 		FROM 
@@ -1097,7 +1061,6 @@ $sql.="\n			ELSE 'outbound'
 				,m_b.caller_id_number m_b_caller_id_number
 				,FROM_UNIXTIME(m_b.start_epoch)
 				,m_b.direction_r
-				,m_b.dialed_user dialed_user_b
 			FROM 
 				tmp_outbound_originator m_b
 			WHERE
@@ -1117,11 +1080,7 @@ if ($is_jive)
 {
 	$sql.="
 				AND (LENGTH(m_b.destination_number ) >= 8 OR LENGTH(m_b.sip_to_user ) >= 8 )
-				
-				/*EM caso de transferencia de chamada de saída o dialed_user passa a ser o ramal para o qual a chamada foi transferida.
-				Neste caso o originator fica diferente*/
-				AND (LENGTH(m_b.dialed_user) > 8 OR m_b.dialed_user IS NULL OR m_b.dialed_user = '' OR (LENGTH(m_b.dialed_user) < 8 AND m_b.bridge_uuid <> m_b.originator))
-				
+				AND (LENGTH(m_b.dialed_user) > 8 OR m_b.dialed_user IS NULL OR m_b.dialed_user = '')	
 				AND m_b.direction = 'outbound'";
 }
 else
@@ -1134,10 +1093,6 @@ $sql.="\n		)a
 		LEFT  JOIN `$dbname`.cdr_variables  v_b ON v_b.uuid = uuid_b
 		INNER JOIN `$dbname`.cdr_refer_uuid r_a ON r_a.uuid = o_uuid_a
 		LEFT  JOIN `$dbname`.cdr_variables v_a ON v_a.uuid = o_uuid_a
-		/*perna da transferencia *1*/
-		LEFT  JOIN `$dbname`.cdr_variables v_c ON v_c.uuid = b_uuid_a
-		LEFT  JOIN `$dbname`.cdr_refer_uuid r_c ON r_c.uuid = b_uuid_a
-		LEFT  JOIN `$dbname`.cdr_refer_uuid r_last_bridge ON r_last_bridge.uuid = r_b.bridge_uuid
 		
 		WHERE 
 			r_a.other_loopback_leg_uuid IS NULL
@@ -1181,7 +1136,7 @@ $sql.="\n			ELSE 'outbound'
 			
 			,'' sofia_profile_name
 			,v_a.caller_id_name caller_id_name_a
-			,v_a.sip_from_user AS caller_id_number_b
+			,'' AS caller_id_number_b
 			
 			/*em caso de verto, o destino fica no callee*/
 			,v_a.destination_number destination_number_b
@@ -1305,10 +1260,7 @@ $sql.="\n		)a
 			,direction_r
 			
 			,r_b.sofia_profile_name
-			
-			/*se *8 e configurado bina, muda para numero de bina*/
 			,v_a.caller_id_name caller_id_name_a
-			
 			/*,v_a.caller_id_number AS caller_id_number_a*/
 			,v_a.sip_from_user AS caller_id_number_a
 			
@@ -1331,7 +1283,7 @@ $sql.="\n		)a
 			END AS `extension`*/
 		
 			/*,v_a.caller_id_number extension*/
-			,v_a.sip_from_user extension -- aqui
+			,v_b.destination_number
 		
 			,CASE
 				when r_b.answer_epoch = 0 OR r_b.answer_epoch IS NULL THEN '' /*para evitar casos onde tem transbordo de bridge*/
@@ -1413,7 +1365,7 @@ else
 			
 if ($is_jive)
 {
-	$sql.="\n				AND LENGTH(m_a.sip_from_user ) <= 7";
+	$sql.="\n				AND LENGTH(m_a.caller_id_number ) <= 7";
 	$sql.="\n				AND m_a.caller_id_number <> 'unknown'";
 	//$sql.="\n				AND LENGTH(m_a.destination_number ) <= 7";
 	$sql.="\n				AND m_a.direction_r = 'local_ext_pbx' /*AND (LENGTH(m_a.destination_number ) <= 7 OR LENGTH(m_a.sip_to_user ) <= 7 )*/";
@@ -1555,7 +1507,7 @@ $sql.="\n		)a
 				,FROM_UNIXTIME(m_a.start_epoch)
 				,m_a.direction_r
 			FROM 
-				tmp_local_wo_originator_4 m_a
+				tmp_local_wo_originator m_a
 			WHERE TRUE
 				/*NOT m_b.is_callback*/ /*este campo está sendo preenchido errado. Esta usando o caller_id_name*/
 				AND m_a.call_back_params IS NULL";
@@ -2215,8 +2167,7 @@ ORDER BY start_epoch_a asc;";
 		array_push($t, $text['label-call_start_epoch']);
 		array_push($t, $text['label-end_time']);
 		array_push($t, $text['label-talk_time']);
-		array_push($t, $text['label-transfer_type']);
-		array_push($t, $text['label-transferred_to']);
+		array_push($t, $text['label-transferation']);
 		array_push($t, $text['label-hangup_cause']);
 		array_push($t, $text['label-hangup_side']);
 
@@ -2454,7 +2405,6 @@ ORDER BY start_epoch_a asc;";
 		$uuid = $row["uuid_a"];
 		$bridge_uuid ="";
 		$member_uuid = "";
-		$uuid_originator = $row['uuid_b_originator'];
 		$start_epoch = $row["start_epoch_a"];
 		if ($is_jive)
 		{
@@ -2510,12 +2460,6 @@ ORDER BY start_epoch_a asc;";
 			search recording
 		*/
 		
-		/*Caso de transferencia *1 quando a chamada é gravada no modulo de callcenter e tem toda a gravação transferida pelo agente*/ 
-		if (file_exists($row["cc_record_filename_a"]))
-		{
-			$cc_record_filename = $row["cc_record_filename_a"];			
-		}
-		
 		$link_recordings = searchRecordings($uuid, $bridge_uuid, $member_uuid, $start_epoch, $cc_record_filename);
 		
 		/** Tom 01-07-2021 */
@@ -2543,30 +2487,19 @@ ORDER BY start_epoch_a asc;";
 		//	
 		//	$link_recordings_transfer = str_replace('~', '%', $link_recordings_transfer);
 		//}
-
-		if ($row['direction'] == 'outbound') 
-		{
-			$uuid_ext = $row["uuid_b"];
-		}
-		else
-		{
-			$uuid_ext = $row["uuid_a"];
-		}
 		
 		
 		
 		$a = array();
-
-		$a[] = '<input type="checkbox" class="selectLine">';
 		
 		//item
 		if($aUuidInc % 2 == 0)
 		{
-			$a[] = "<span class=\"label reportExtension\" id=\"tag-$x\" data-uuid='$uuid_ext'>".$x."</span>";
+			$a[] = "<span class=\"label selectLine\" id=\"tag-$x\" onclick=\"selectLine('tag-$x')\">".$x."</span>";
 		}
 		else
 		{
-			$a[] = "<span class=\"label label-warning reportExtension\" id=\"tag-$x\" data-uuid='$uuid_ext'>".$x."</span>";
+			$a[] = "<span class=\"label label-warning selectLine\" id=\"tag-$x\" onclick=\"selectLine('tag-$x')\">".$x."</span>";
 		}
 		
 		//	$a[] = $cc_record_filename;
@@ -2742,7 +2675,14 @@ ORDER BY start_epoch_a asc;";
 		
 		//call_transferred_to
 		$transferExtension = numbers_only($row["call_transferred_to"]);
-		$a[] = Report_Languages($row["call_transferred_to"], $text);				
+		$a[] = Report_Languages($row["call_transferred_to"], $text);
+				/*
+				"<span 
+					class=\"transferTab\" onclick=\"transferTab('$transferExtension', '$transferDirection', '$start_stamp_begin', '$start_stamp_end', '".$row["uuid_b_originator"]."')\" >".Report_Languages($row["call_transferred_to"], $text)."		
+				</span>
+				";
+				*/
+				
 		
 		//motivo desligamento
 		$a[] = Report_Languages($row["hangup_cause"], $text);		
@@ -2790,6 +2730,8 @@ ORDER BY start_epoch_a asc;";
 		{
 			$a[] = "";
 		}
+
+		$a[] = "<span data-uuid='".$row['uuid_a']."' class='fxCall'><i class='fal fa-eye'></i></span>";
 		
 		if(if_group("superadmin"))
 		{
