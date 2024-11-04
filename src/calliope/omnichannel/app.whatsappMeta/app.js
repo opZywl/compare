@@ -20,7 +20,8 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/';
 const REDIS_HOST = process.env.REDIS_HOST || 'localhost';
 
 const redisClient = redis.createClient({
-    url: `redis://${REDIS_HOST}:6379`,
+	host: REDIS_HOST,
+	port: 6379,
 });
 
 redisClient.on('error', (err) => console.log('Redis Client Error', err));
