@@ -99,18 +99,13 @@
 			,SUM(outbound_canceled_total) 'outbound_canceled_total'		
 			,SUM(outbound_answered_total_duration) 'outbound_answered_total_duration'
 			,SUM(outbound_answered_avg_time) 'outbound_answered_avg_time'
-			,SUM(inbound_answered_less_15) 'inbound_answered_less_15'
 			,SUM(inbound_answered_less_20) 'inbound_answered_less_20'
+			,SUM(inbound_answered_less_15) 'inbound_answered_less_15'
+			,SUM(inbound_answered_less_30) 'inbound_answered_less_30'
 			,SUM(inbound_answered_less_60) 'inbound_answered_less_60'
 			,SUM(inbound_answered_above_60) 'inbound_answered_above_60'
-			,SUM(inbound_answered_less_25) 'inbound_answered_less_25'
-			,SUM(inbound_answered_less_30) 'inbound_answered_less_30'
-			,SUM(inbound_answered_less_35) 'inbound_answered_less_35'
-			,SUM(inbound_answered_less_40) 'inbound_answered_less_40'
-			,SUM(inbound_answered_less_45) 'inbound_answered_less_45'
-			,SUM(inbound_answered_less_50) 'inbound_answered_less_50'
-			,SUM(inbound_answered_less_55) 'inbound_answered_less_55'
-			,SUM(inbound_tme) AS inbound_tme
+			,SUM(inbound_ns) 'inbound_ns'
+			,SUM(inbound_tme) / SUM(agent_answer_total) AS inbound_tme
 		FROM (
 		
 			/*days*/
@@ -133,17 +128,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			/*WHERE dir_member in ('inbound_member_answered', 'inbound_member_canceled', 'inbound_member_issue_sound', 'inbound_member_callback_answered')*/
@@ -173,17 +163,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member = 'inbound_member_answered'
@@ -210,17 +195,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member = 'inbound_member_canceled'
@@ -247,17 +227,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member in ('inbound_member_canceled')
@@ -285,17 +260,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member in ('inbound_member_issue_sound')
@@ -322,17 +292,12 @@
 				,'0' as 'outbound_canceled_total'
 				,agent_answer_duration_sec as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member in ('outbound_answered')
@@ -361,17 +326,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,SUM(agent_answer_duration_sec )/ COUNT(1) as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member in ('outbound_answered')
@@ -399,17 +359,12 @@
 				,'1' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE dir_member in ('outbound_canceled')
@@ -436,17 +391,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'1' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
@@ -475,17 +425,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'1' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'1' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
@@ -514,17 +459,12 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'1' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
@@ -553,26 +493,21 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'1' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'0' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 55 AND 60
+			AND queue_duration_sec BETWEEN 31 AND 60
 			AND dir_member = 'inbound_member_answered'
 
 			UNION ALL 
 
-			/*INBOUND ANSWERED > 60 SEG */
+			/*INBOUND NS */
 			SELECT
 				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
 				,'0' as 'total'
@@ -592,297 +527,19 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'1' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
+				,'1' as 'inbound_ns'
 				,'0' as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
-			AND queue_duration_sec > 60
-			AND dir_member = 'inbound_member_answered'
-
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 31 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'1' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 21 AND 25
+			AND queue_duration_sec <= 120
 			AND dir_member = 'inbound_member_answered'
 			
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 31 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'1' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 26 AND 30
-			AND dir_member = 'inbound_member_answered'
-			
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 31 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'1' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 31 AND 35
-			AND dir_member = 'inbound_member_answered'
-			
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 31 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'1' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 41 AND 45
-			AND dir_member = 'inbound_member_answered'
-			
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 31 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'1' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 41 AND 45
-			AND dir_member = 'inbound_member_answered'
-			
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 31 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'1' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 46 AND 50
-			AND dir_member = 'inbound_member_answered'
-			
-			UNION ALL
-		
-			/*INBOUND ANSWERED BETWEEN 55 AND 60 */
-			SELECT
-				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
-				,'0' as 'total'
-				,'0' as 'agent_answer_total'
-				,'0' as 'agent_answer_total_percent'
-				,'0' AS 'agent_answer_duration_sec'
-				,'0' as 'answer_avg_time'
-				,'0' as 'TRANSBORDO'
-				,'0' as '%TRANSBORDO'
-				,'0' as 'inbound_member_canceled_total'
-				,'0' as 'inbound_member_canceled_total_percent'
-				,'0' as 'inbound_avg_time_canceled'
-				,'0' as 'inbound_member_canceled_total_duration'
-				,'0' as 'inbound_issue_sound_canceled_total'
-				,'0' as 'inbound_issue_sound_canceled_total_percent'
-				,'0' as 'outbound_answered_total'
-				,'0' as 'outbound_canceled_total'
-				,'0' as 'outbound_answered_total_duration'
-				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
-				,'0' as 'inbound_answered_less_20'
-				,'0' as 'inbound_answered_less_60'
-				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'1' as 'inbound_answered_less_55'
-				,'0' as 'inbound_tme'
-			FROM tmp_cdr_cc_c_perfomance
-			WHERE TRUE 
-			AND queue_duration_sec BETWEEN 51 AND 55
-			AND dir_member = 'inbound_member_answered'
-			
-			UNION ALL
+			UNION ALL 
 			
 			/*TME */
 			SELECT
@@ -904,21 +561,17 @@
 				,'0' as 'outbound_canceled_total'
 				,'0' as 'outbound_answered_total_duration'
 				,'0' as 'outbound_answered_avg_time'
-				,'0' as 'inbound_answered_less_15'
 				,'0' as 'inbound_answered_less_20'
+				,'0' as 'inbound_answered_less_15'
+				,'0' as 'inbound_answered_less_30'
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
-				,'0' as 'inbound_answered_less_25'
-				,'0' as 'inbound_answered_less_30'
-				,'0' as 'inbound_answered_less_35'
-				,'0' as 'inbound_answered_less_40'
-				,'0' as 'inbound_answered_less_45'
-				,'0' as 'inbound_answered_less_50'
-				,'0' as 'inbound_answered_less_55'
-				,'1' as 'inbound_tme'
+				,'0' as 'inbound_ns'
+				,queue_duration_sec as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
 			AND dir_member in ('inbound_member_answered', 'inbound_member_callback_answered')
+				
 		)a
 		WHERE days IS NOT null
 		GROUP BY days;
@@ -1079,7 +732,7 @@
 			,SUM(inbound_answered_less_60) 'inbound_answered_less_60'
 			,SUM(inbound_answered_above_60) 'inbound_answered_above_60'
 			,SUM(inbound_ns) 'inbound_ns'
-			,SUM(inbound_tme) AS inbound_tme
+			,SUM(inbound_tme) / COUNT(1) AS inbound_tme
 		FROM (
 		
 			/*days*/
@@ -1513,6 +1166,8 @@
 			AND queue_duration_sec > 60
 			AND dir_member = 'inbound_member_answered'
 			
+			UNION ALL
+			
 			/*INBOUND NS */
 			SELECT
 				FROM_UNIXTIME(start_epoch_a, '%Y-%m-%d') as days
@@ -1545,6 +1200,7 @@
 			AND queue_duration_sec <= 120
 			AND dir_member = 'inbound_member_answered'
 			
+			UNION ALL
 			
 			/*TME */
 			SELECT
@@ -1572,7 +1228,7 @@
 				,'0' as 'inbound_answered_less_60'
 				,'0' as 'inbound_answered_above_60'
 				,'0' as 'inbound_ns'
-				,'1' as 'inbound_tme'
+				,queue_duration_sec as 'inbound_tme'
 			FROM tmp_cdr_cc_c_perfomance
 			WHERE TRUE 
 			AND dir_member in ('inbound_member_answered', 'inbound_member_callback_answered')
@@ -1687,26 +1343,18 @@
 			array_push($t, $text['label-total_answered']);
 			array_push($t, $text['label-total_answered_15']);
 			array_push($t, $text['label-total_answered_20']);
-			array_push($t, $text['label-total_answered_25']);
 			array_push($t, $text['label-total_answered_30']);
-			array_push($t, $text['label-total_answered_35']);
-			array_push($t, $text['label-total_answered_40']);
-			array_push($t, $text['label-total_answered_45']);
-			array_push($t, $text['label-total_answered_45']);
-			array_push($t, $text['label-total_answered_55']);
 			array_push($t, $text['label-total_answered_60']);
 			array_push($t, $text['label-total_answered_above_60']);
-			array_push($t, $text['label-ns']);
 			array_push($t, $text['label-answered-percentage']);
 			array_push($t, $text['label-total_answered_duration']);
 			array_push($t, $text['label-tma']);
-			array_push($t, $text['label-tme']);
 			array_push($t, $text['label-total_canceled']);
 			array_push($t, $text['label-canceled-percentag']);
 			array_push($t, $text['label-av_canceled']);
 			array_push($t, $text['label-total_canceled_time']);
 			array_push($t, $text['label-cc_droped_issue_sound']);
-			array_push($t, $text['label-cc_droped_issue_sound-percent']);				
+			array_push($t, $text['label-cc_droped_issue_sound-percent']);
 			array_push($t, $text['label-total_outbound']);
 			array_push($t, $text['label-total_outbound_answered']);
 			array_push($t, $text['label-outbound-answered-percentage']);
@@ -1718,28 +1366,44 @@
 			
 			fputcsv($fh, $t, ";");
 
+			$totalDays = 0;
+			$totalInboundAnswered = 0;
+			$totalInboundLess15 = 0;
+			$totalInboundLess20 = 0;
+			$totalInboundLess30 = 0;
+			$totalInboundLess60 = 0;
+			$totalInboundAbove60 = 0;
+			$totalInboundDuration = 0;
+			$totalInboundAnswerAvgTime = 0;
+			$totalInboundCanceled = 0;
+			$totalInboundCanceledAvgTime = 0;
+			$totalInboundCanceledDuration = 0;
+			$totalInboundIssueSound = 0;
+			$totalOutbound = 0;
+			$totalOutboundAnswered = 0;
+
 			foreach($result_dias as $row)
 			{
 				$a = array();
-				$a[] = $row['days'];
-				$a[] = $row['total'];
-				$a[] = $row['agent_answer_total'];
-				$a[] = $row['inbound_answered_less_15'];
-				$a[] = $row['inbound_answered_less_20'];
-				$a[] = $row['inbound_answered_less_25'];
-				$a[] = $row['inbound_answered_less_30'];
-				$a[] = $row['inbound_answered_less_35'];
-				$a[] = $row['inbound_answered_less_40'];
-				$a[] = $row['inbound_answered_less_45'];
-				$a[] = $row['inbound_answered_less_50'];
-				$a[] = $row['inbound_answered_less_55'];
-				$a[] = $row['inbound_answered_less_60'];
-				$a[] = $row['inbound_answered_above_60'];
 				
-				$inbound_ns = $row['inbound_answered_less_15'] + $row['inbound_answered_less_20'];
-				$ns_percent = $row['agent_answer_total'] == 0 ? 0 : $inbound_ns / $row['agent_answer_total'];
-				$ns_percent = number_format($ns_percent * 100, 2) . '%'; 
-				$a[] = $ns_percent;
+				//DAYS /*fuso*/?
+				$a[] = $row['days'];
+				
+				//TOTAL
+				$a[] = $row['total'];
+				
+				//answereds		
+				$a[] = $row['agent_answer_total'];
+				
+				$a[] = $row['inbound_answered_less_15'];
+
+				$a[] = $row['inbound_answered_less_20'];
+
+				$a[] = $row['inbound_answered_less_30'];
+
+				$a[] = $row['inbound_answered_less_60'];
+
+				$a[] = $row['inbound_answered_above_60'];
 				
 				//% answereds		
 				$percent = $row['agent_answer_total'] == 0 ? 0 : $row['agent_answer_total'] / $row['total'];
@@ -1752,15 +1416,11 @@
 				//answer_avg_time
 				$a[] = gmdate("H:i:s", $row['answer_avg_time']);
 				
-				//inbound_tme 1756
-				$tme = $row['inbound_tme'] == 0 ? 0 : $row['inbound_tme'] / $row['total'];
-				$a[] = gmdate("H:i:s", $tme);
-							
 				//total canceled
 				$a[] = $row['inbound_member_canceled_total'];
 				
 				//% canceleds	
-				$percent = $row['inbound_member_canceled_total'] == 0 ? 0 : $row['inbound_member_canceled_total'] / $row['total'];
+				$percent =$row['inbound_member_canceled_total'] == 0 ? 0 : $row['inbound_member_canceled_total'] / $row['total'];
 				$percent = number_format($percent * 100, 2) . '%';
 				$a[] = $percent;
 				
@@ -1785,6 +1445,9 @@
 				//outbound answered
 				$a[] = $row['outbound_answered_total'];
 				
+				//outbound canceled
+				//$a[] = $row['outbound_canceled_total'];
+				
 				//% outbound
 				$percent = $row['outbound_answered_total'] == 0 ? 0 : $row['outbound_answered_total'] / $total_outbound;
 				$percent = number_format($percent * 100, 2) . '%';
@@ -1793,25 +1456,16 @@
 				
 				//% total outbound avg			
 				$res = $row['outbound_answered_total_duration'] == 0 ? 0 : $row['outbound_answered_total_duration'] / $row['outbound_answered_total'];
-				$res = $res == 0 ? '00:00:00' : gmdate("H:i:s", $res);
-				$a[] = $res;
+				$a[] = $res == 0 ? '00:00:00' : gmdate("H:i:s", $res);
 
 				//total sum
 				$totalDays += $row['total'];
 				$totalInboundAnswered += $row['agent_answer_total'];
 				$totalInboundLess15 += $row['inbound_answered_less_15'];
 				$totalInboundLess20 += $row['inbound_answered_less_20'];
-				$totalInboundLess25 += $row['inbound_answered_less_25'];
 				$totalInboundLess30 += $row['inbound_answered_less_30'];
-				$totalInboundLess35 += $row['inbound_answered_less_35'];
-				$totalInboundLess40 += $row['inbound_answered_less_40'];
-				$totalInboundLess45 += $row['inbound_answered_less_45'];
-				$totalInboundLess50 += $row['inbound_answered_less_50'];
-				$totalInboundLess55 += $row['inbound_answered_less_55'];
 				$totalInboundLess60 += $row['inbound_answered_less_60'];
 				$totalInboundAbove60 += $row['inbound_answered_above_60'];
-				$totalNs += $inbound_ns;
-				$totalTme += $row['inbound_tme'];
 				$totalInboundDuration += $row['agent_answer_duration_sec'];
 				$totalInboundAnswerAvgTime += $row['answer_avg_time'];
 				$totalInboundCanceled += $row['inbound_member_canceled_total'];
@@ -1822,66 +1476,48 @@
 				$totalOutbound += $total_outbound;
 				$totalOutboundAnswered += $row['outbound_answered_total'];
 				$totalOutboundAnsweredDuration += $row['outbound_answered_total_duration'];
-
+				
 				fputcsv($fh, $a, ";");
 			}
-			
+
+			//TOTAL
 			$total = array();
 			$total[] = 'Total';
-			$total[] = $totalDays;
-			$total[] = $totalInboundAnswered;
-			$total[] = $totalInboundLess15;
-			$total[] = $totalInboundLess20;
-			$total[] = $totalInboundLess25;
-			$total[] = $totalInboundLess30;
-			$total[] = $totalInboundLess35;
-			$total[] = $totalInboundLess40;
-			$total[] = $totalInboundLess45;
-			$total[] = $totalInboundLess50;
-			$total[] = $totalInboundLess55;
-			$total[] = $totalInboundLess60;
-			$total[] = $totalInboundAbove60;
-
-			$percent_ns = $totalInboundAnswered == 0 ? 0 : $totalNs / $totalInboundAnswered;
-			$percent_ns = number_format($percent_ns * 100, 2) . '%';
-			$total[] = $percent_ns;
-
+			$total[] = "<span class='badge badge-success'>$totalDays</span>";
+			$total[] = "<span class='badge badge-success'>$totalInboundAnswered</span>";
+			$total[] = "<span class='badge badge-inverse'>$totalInboundLess15</span>";
+			$total[] = "<span class='badge badge-inverse'>$totalInboundLess20</span>";
+			$total[] = "<span class='badge badge-inverse'>$totalInboundLess30</span>";
+			$total[] = "<span class='badge badge-inverse'>$totalInboundLess60</span>";
+			$total[] = "<span class='badge badge-important'>yyy $totalInboundAbove60</span>";
 			//% answereds		
 			$percent = $totalInboundAnswered == 0 ? 0 : $totalInboundAnswered / $totalDays;
 			$percent = number_format($percent * 100, 2) . '%';
-			$total[] = $percent;
-
-			$total[] = gmdate('H:i:s', $totalTme);
-			$total[] = gmdate('H:i:s', $totalInboundDuration);
-			$total[] = gmdate('H:i:s', $totalInboundAnswerAvgTime);
-			$total[] = $totalInboundCanceled;
-
+			$total[] = "<span class='badge badge-success'>".$percent."</span>";
+			$total[] = "<span class='badge badge-success'>".gmdate('H:i:s',$totalInboundDuration)."</span>";
+			$total[] = "<span class='badge badge-important'>".gmdate('H:i:s',$totalInboundAnswerAvgTime)."</span>";
+			$total[] = "<span class='badge badge-important'>$totalInboundCanceled</span>";
 			//% canceleds	
 			$percent = $totalInboundCanceled == 0 ? 0 : $totalInboundCanceled / $totalDays;
 			$percent = number_format($percent * 100, 2) . '%';
-			$total[] = $percent;
-
-			$total[] = gmdate('H:i:s', $totalInboundCanceledAvgTime);
-			$total[] = gmdate('H:i:s', $totalInboundCanceledDuration);
-			$total[] = $totalInboundIssueSound;
-
+			$total[] = "<span class='badge badge-important'>".$percent."</span>";
+			$total[] = "<span class='badge badge-important'>".gmdate('H:i:s',$totalInboundCanceledAvgTime)."</span>";
+			$total[] = "<span class='badge badge-important'>".gmdate('H:i:s',$totalInboundCanceledDuration)."</span>";
+			$total[] = "<span class='badge badge-inverse'>$totalInboundIssueSound</span>";
 			//% issue sound	
 			$percent = $totalInboundIssueSound == 0 ? 0 : $totalInboundIssueSound / $totalInboundMember;
 			$percent = number_format($percent * 100, 2) . '%';
-			$total[] = $percent;
-
-			$total[] = $totalOutbound;
-			$total[] = $totalOutboundAnswered;
-
+			$total[] = "<span class='badge badge-inverse'>".$percent."</span>";
+			$total[] = "<span class='badge badge-success'>".$totalOutbound."</span>";
+			$total[] = "<span class='badge badge-success'>".$totalOutboundAnswered."</span>";
 			//% outbound
 			$percent = $totalOutboundAnswered == 0 ? 0 : $totalOutboundAnswered / $totalOutbound;
 			$percent = number_format($percent * 100, 2) . '%';
-			$total[] = $percent;
-
+			$total[] = "<span class='badge badge-success'>".$percent."</span>";	
 			//% total outbound avg			
 			$res = $totalOutboundAnsweredDuration == 0 ? 0 : $totalOutboundAnsweredDuration / $totalOutboundAnswered;
 			$res = $res == 0 ? '00:00:00' : gmdate("H:i:s", $res);
-			$total[] = $res;
+			$total[] = "<span class='badge badge-success'>".$res."</span>";
 			
 			fputcsv($fh, $total, ";");
 			
@@ -1894,7 +1530,7 @@
 			echo $csv;
 			
 			return;
-		}
+		}	
 		
 		$nested = array();
 		$totalDays = 0;
@@ -1915,29 +1551,34 @@
 		$totalOutbound = 0;
 		$totalOutboundAnswered = 0;
 		
+		$countReg = 0;
 		foreach($result_dias as $row)
 		{
 			$a = array();
 			
+			//DAYS /*fuso*/?
 			$a[] = "<span>".$row['days']."</span>";
-			$a[] = "<span class='badge badge-success'>".$row['total']."</span>";
-			$a[] = "<span class='badge badge-success'>".$row['agent_answer_total']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_15']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_20']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_25']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_30']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_35']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_40']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_45']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_50']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_55']."</span>";
-			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_60']."</span>";
-			$a[] = "<span class='badge badge-important'>".$row['inbound_answered_above_60']."</span>";
 			
-			$inbound_ns = $row['inbound_answered_less_15'] + $row['inbound_answered_less_20'];
-			$ns_percent = $row['agent_answer_total'] == 0 ? 0 : $inbound_ns / $row['agent_answer_total'];
-			$ns_percent = number_format($ns_percent * 100, 2) . '%'; 
-			$a[] = "<span class='badge badge-success'>".$ns_percent. "</span>";
+			//TOTAL
+			$a[] = "<span class='badge badge-success'>".$row['total']."</span>";
+			
+			//answereds		
+			$a[] = "<span class='badge badge-success'>".$row['agent_answer_total']."</span>";
+
+			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_15']."</span>";
+
+			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_20']."</span>";
+
+			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_30']."</span>";
+
+			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_60']."</span>";
+
+			//$a[] = "<span class='badge badge-important'>ggg ".$row['inbound_answered_above_60']."</span>";
+			
+			$ns_percent = $row['agent_answer_total'] == 0 ? 0 : $row['inbound_ns'] / $row['agent_answer_total'];
+			$ns_percent = number_format($ns_percent * 100, 2) . '%';
+			
+			$a[] = "<span class='badge badge-important'>". $ns_percent."</span>";
 			
 			//% answereds		
 			$percent = $row['agent_answer_total'] == 0 ? 0 : $row['agent_answer_total'] / $row['total'];
@@ -1951,8 +1592,8 @@
 			$a[] = "<span class='badge badge-important'>".gmdate("H:i:s", $row['answer_avg_time'])."</span>";
 			
 			//inbound_tme
-			$a[] = "<span class='badge badge-important'>".gmdate("H:i:s", $row['inbound_tme'])."</span>"; 
-						
+			$a[] = "<span class='badge badge-important'>".gmdate("H:i:s", $row['inbound_tme'])."</span>";
+			
 			//total canceled
 			$a[] = "<span class='badge badge-important'>".$row['inbound_member_canceled_total']."</span>";
 			
@@ -2001,17 +1642,13 @@
 			$totalInboundAnswered += $row['agent_answer_total'];
 			$totalInboundLess15 += $row['inbound_answered_less_15'];
 			$totalInboundLess20 += $row['inbound_answered_less_20'];
-			$totalInboundLess25 += $row['inbound_answered_less_25'];
 			$totalInboundLess30 += $row['inbound_answered_less_30'];
-			$totalInboundLess35 += $row['inbound_answered_less_35'];
-			$totalInboundLess40 += $row['inbound_answered_less_40'];
-			$totalInboundLess45 += $row['inbound_answered_less_45'];
-			$totalInboundLess50 += $row['inbound_answered_less_50'];
-			$totalInboundLess55 += $row['inbound_answered_less_55'];
 			$totalInboundLess60 += $row['inbound_answered_less_60'];
-			$totalInboundAbove60 += $row['inbound_answered_above_60'];
-			$totalNs += $inbound_ns;
+			$totalInboundAbove60 = $row['inbound_answered_above_60'];
+			$totalNs += $row['inbound_ns'];
 			$totalTme += $row['inbound_tme'];
+			//error_log("inbound_tme " . $row['inbound_tme'] . "\n");
+			//error_log("totalTme " . $totalTme . "\n");
 			$totalInboundDuration += $row['agent_answer_duration_sec'];
 			$totalInboundAnswerAvgTime += $row['answer_avg_time'];
 			$totalInboundCanceled += $row['inbound_member_canceled_total'];
@@ -2024,7 +1661,7 @@
 			$totalOutboundAnsweredDuration += $row['outbound_answered_total_duration'];
 
 			$nested[] = $a;
-			
+			$countReg++;
 		}
 
 		//TOTAL
@@ -2034,27 +1671,20 @@
 		$total[] = "<span class='badge badge-success'>$totalInboundAnswered</span>";
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess15</span>";
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess20</span>";
-		$total[] = "<span class='badge badge-inverse'>$totalInboundLess25</span>";
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess30</span>";
-		$total[] = "<span class='badge badge-inverse'>$totalInboundLess35</span>";
-		$total[] = "<span class='badge badge-inverse'>$totalInboundLess40</span>";
-		$total[] = "<span class='badge badge-inverse'>$totalInboundLess45</span>";
-		$total[] = "<span class='badge badge-inverse'>$totalInboundLess50</span>";
-		$total[] = "<span class='badge badge-inverse'>$totalInboundLess55</span>";
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess60</span>";
-		$total[] = "<span class='badge badge-important'>$totalInboundAbove60</span>";
+		//$total[] = "<span class='badge badge-important'>bbb $totalInboundAbove60</span>";
 		
-		// total nivel serviço 
 		$percent_ns = $totalInboundAnswered == 0 ? 0 : $totalNs / $totalInboundAnswered;
 		$percent_ns = number_format($percent_ns * 100, 2) . '%';
-		$total[] = "<span class='badge badge-success'>$percent_ns</span>";
+		$total[] = "<span class='badge badge-important'>$percent_ns</span>";
 		//% answereds		
 		$percent = $totalInboundAnswered == 0 ? 0 : $totalInboundAnswered / $totalDays;
 		$percent = number_format($percent * 100, 2) . '%';
 		$total[] = "<span class='badge badge-success'>".$percent."</span>";
 		$total[] = "<span class='badge badge-success'>".gmdate('H:i:s',$totalInboundDuration)."</span>";
-		$total[] = "<span class='badge badge-important'>".gmdate('H:i:s',$totalInboundAnswerAvgTime)."</span>";
-		$total[] = "<span class='badge badge-important'>".gmdate('H:i:s',$totalTme)."</span>";
+		$total[] = "<span class='badge badge-important'>".gmdate('H:i:s',($totalInboundAnswerAvgTime / $countReg))."</span>";
+		$total[] = "<span class='badge badge-important'>".gmdate('H:i:s', ($totalTme / $countReg))."</span>";
 		$total[] = "<span class='badge badge-important'>$totalInboundCanceled</span>";
 		//% canceleds	
 		$percent = $totalInboundCanceled == 0 ? 0 : $totalInboundCanceled / $totalDays;
@@ -2075,7 +1705,7 @@
 		$total[] = "<span class='badge badge-success'>".$percent."</span>";	
 		//% total outbound avg			
 		$res = $totalOutboundAnsweredDuration == 0 ? 0 : $totalOutboundAnsweredDuration / $totalOutboundAnswered;
-		$res = $res == 0 ? '00:00:00' : gmdate("H:i:s", $res);
+		$res = $res == 0 ? '00:00:00' : gmdate("H:i:s", ($res / $countReg));
 		$total[] = "<span class='badge badge-success'>".$res."</span>";
 
 		$nested[] = $total;
@@ -2127,7 +1757,7 @@
 
 			$a[] = "<span class='badge badge-inverse'>".$row['inbound_answered_less_60']."</span>";
 
-			$a[] = "<span class='badge badge-important'>".$row['inbound_answered_above_60']."</span>";
+			$a[] = "<span class='badge badge-important'>uuu ".$row['inbound_answered_above_60']."</span>";
 			
 			//% answereds		
 			$percent = $row['agent_answer_total'] == 0 ? 0 : $row['agent_answer_total'] / $row['total'];
@@ -2214,7 +1844,7 @@
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess20</span>";
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess30</span>";
 		$total[] = "<span class='badge badge-inverse'>$totalInboundLess60</span>";
-		$total[] = "<span class='badge badge-important'>$totalInboundAbove60</span>";
+		$total[] = "<span class='badge badge-important'>xxx $totalInboundAbove60</span>";
 		//% answereds		
 		$percent = $totalInboundAnswered == 0 ? 0 : $totalInboundAnswered / $totalDays;
 		$percent = number_format($percent * 100, 2) . '%';
